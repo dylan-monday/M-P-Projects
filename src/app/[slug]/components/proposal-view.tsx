@@ -359,7 +359,7 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
             />
             <FeatureCard
               number="03"
-              title="Text-to-Info Flow"
+              title="Text-to-Info Flow*"
               description="Text BIGSCREEN to 55555. They text during the preshow. By the credits, everything they need is in their pocket."
               highlight="Frictionless prospect capture"
             />
@@ -371,16 +371,22 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
             />
             <FeatureCard
               number="05"
-              title="Automated Nurture Sequences"
+              title="Automated Nurture Sequences†"
               description="Every form, scan, and text triggers a smart email sequence. The right stat at the right moment. Built once, runs forever."
-              highlight="Sells while you focus elsewhere"
+              highlight="Future feature worth considering"
             />
             <FeatureCard
               number="06"
-              title="Stats Kit PDF Generator"
-              description="A designed, branded leave-behind your team can send, share, and forward. Not a brochure — a weapon."
-              highlight="Professional collateral on demand"
+              title="Downloadable Stats Kit"
+              description="A designed PDF with all the key cinema advertising stats — formatted for email, print, or presentation. Your sales team sends it with one click."
+              highlight="Shareable leave-behind collateral"
             />
+          </div>
+
+          {/* Footnotes */}
+          <div className="mt-10 text-[11px] text-white/30 font-light space-y-1" data-animate="fade">
+            <p>* SMS functionality uses pay-per-message service — typically $0.01–0.02/text, costs scale with usage.</p>
+            <p>† Future feature not included in current scope, but infrastructure will support adding later.</p>
           </div>
         </div>
       </section>
@@ -512,9 +518,8 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
                 "Shared content library",
                 "Simple admin dashboard",
                 "LGM in-theater QR capture",
-                "LGM text-to-info SMS flow",
-                "LGM automated email sequence",
-                "LGM Stats Kit PDF",
+                "LGM text-to-info SMS flow*",
+                "LGM downloadable stats kit",
                 "PPP creative showcase",
                 "PPP dual-audience routing",
                 "30 days post-launch support",
@@ -525,6 +530,7 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
                 </div>
               ))}
             </div>
+            <p className="mt-5 text-[11px] text-white/25">* SMS uses pay-per-message service — typically $0.01–0.02/text</p>
           </div>
 
           <div className="text-center mb-16" data-animate="fade">
