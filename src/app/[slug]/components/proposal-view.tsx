@@ -293,11 +293,12 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
               <p className="text-[10px] tracking-[0.4em] uppercase text-gold-400/60 mb-6">Why this proposal</p>
 
               <p className="text-[clamp(1.1rem,2.5vw,1.4rem)] font-extralight leading-[1.6] text-white/70 mb-6">
-                We see real potential here. Your work in cinema advertising is proven — we believe the websites should reflect that quality and actively generate new business.
+                We see real potential here.<br />
+                Your work in cinema advertising is proven — we believe the websites should reflect that quality and actively generate new business.
               </p>
 
               <p className="text-base text-white/45 leading-relaxed font-light mb-6">
-                We&apos;re also using this as a test case for new AI-assisted development tools.
+                We&apos;re also using this as a test case for new AI-assisted development tools.<br />
                 It&apos;s how we can deliver this scope at a fraction of typical agency rates.
               </p>
 
@@ -707,6 +708,9 @@ function OpportunityCard({ domain, opportunities }: { domain: string; opportunit
 }
 
 function FeatureCard({ number, title, description, highlight }: { number: string; title: string; description: string; highlight: string }) {
+  // Split description on periods and add soft breaks
+  const sentences = description.split(/(?<=\.)\s+/);
+
   return (
     <div className="group p-6 border border-white/[0.06] bg-white/[0.015] hover:border-gold-400/20 hover:bg-gold-400/[0.02] transition-all duration-500 relative overflow-hidden">
       {/* Subtle gradient on hover */}
@@ -723,9 +727,14 @@ function FeatureCard({ number, title, description, highlight }: { number: string
           {title}
         </h3>
 
-        {/* Description */}
+        {/* Description with soft breaks after sentences */}
         <p className="text-sm text-white/40 leading-relaxed mb-5 font-light">
-          {description}
+          {sentences.map((sentence, i) => (
+            <span key={i}>
+              {sentence}
+              {i < sentences.length - 1 && <br />}
+            </span>
+          ))}
         </p>
 
         {/* Highlight pill */}
