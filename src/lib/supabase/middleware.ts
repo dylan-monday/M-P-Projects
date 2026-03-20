@@ -43,12 +43,11 @@ export async function updateSession(request: NextRequest) {
 
   const isAdminRoute = request.nextUrl.pathname.startsWith("/admin");
   const isAuthRoute = request.nextUrl.pathname === "/login";
-  const isPublicRoute =
-    request.nextUrl.pathname === "/" ||
-    request.nextUrl.pathname.startsWith("/api/");
 
-  // Redirect unauthenticated users to login
-  if (!user && !isPublicRoute && !isAuthRoute) {
+  // Only protect admin routes in middleware
+  // Project slug routes (e.g., /lgm-ppp) handle their own auth
+  // based on project status (proposals are public)
+  if (!user && isAdminRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("redirect", request.nextUrl.pathname);
