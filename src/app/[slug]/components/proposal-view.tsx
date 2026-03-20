@@ -28,20 +28,42 @@ const SECTIONS = [
   { id: "offer", label: "Accept" },
 ];
 
-// Subtle bell sound for interactions
-function playBell(volume = 0.15) {
+// Resonant bell sound for interactions
+function playBell(volume = 0.12) {
   if (typeof window === "undefined") return;
   const audio = new AudioContext();
-  const oscillator = audio.createOscillator();
-  const gain = audio.createGain();
-  oscillator.connect(gain);
-  gain.connect(audio.destination);
-  oscillator.frequency.setValueAtTime(880, audio.currentTime);
-  oscillator.type = "sine";
-  gain.gain.setValueAtTime(volume, audio.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + 0.8);
-  oscillator.start();
-  oscillator.stop(audio.currentTime + 0.8);
+  const now = audio.currentTime;
+
+  // Create multiple oscillators for resonance
+  const frequencies = [330, 660, 1320]; // Fundamental + harmonics (E4)
+  const decays = [2.5, 1.8, 1.2]; // Longer decay for resonance
+  const volumes = [volume, volume * 0.35, volume * 0.15];
+
+  frequencies.forEach((freq, i) => {
+    const osc = audio.createOscillator();
+    const gain = audio.createGain();
+
+    // Add a subtle low-pass filter for warmth
+    const filter = audio.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(2000, now);
+    filter.Q.setValueAtTime(2, now); // Slight resonance
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(audio.destination);
+
+    osc.frequency.setValueAtTime(freq, now);
+    osc.type = "sine";
+
+    // Soft attack, long decay
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(volumes[i], now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + decays[i]);
+
+    osc.start(now);
+    osc.stop(now + decays[i]);
+  });
 }
 
 export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewProps) {
