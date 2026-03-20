@@ -596,18 +596,20 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
           </div>
 
           <div className="text-center" data-animate="fade">
-            <h3 className="text-2xl md:text-3xl font-extralight mb-8 tracking-tight">
+            <h3 className="text-2xl md:text-3xl font-extralight mb-10 tracking-tight">
               Ready to start?
             </h3>
-            <Button
-              size="lg"
-              onClick={handleCheckout}
-              isLoading={isCheckoutLoading}
-              className="px-10 py-5 text-base bg-gradient-to-r from-gold-400 to-gold-500 hover:from-gold-300 hover:to-gold-400 text-[#041c45] font-medium tracking-wide rounded-none transition-all duration-500"
-            >
-              Accept & Pay Deposit — {formatCurrency(project.deposit_amount || 0)}
-            </Button>
-            <p className="mt-6 text-sm text-white/25 font-light">
+            <div className="inline-block animate-[float_4s_ease-in-out_infinite]">
+              <Button
+                size="lg"
+                onClick={handleCheckout}
+                isLoading={isCheckoutLoading}
+                className="px-12 py-5 text-base bg-gradient-to-r from-gold-300 via-gold-400 to-gold-500 hover:from-gold-200 hover:via-gold-300 hover:to-gold-400 text-[#041c45] font-medium tracking-wide rounded-full shadow-[0_0_40px_rgba(212,168,67,0.4)] hover:shadow-[0_0_60px_rgba(212,168,67,0.6)] transition-all duration-500"
+              >
+                Accept & Pay Deposit — {formatCurrency(project.deposit_amount || 0)}
+              </Button>
+            </div>
+            <p className="mt-8 text-sm text-white/25 font-light">
               Questions? Email dylan@mondayandpartners.com
             </p>
           </div>
@@ -646,6 +648,11 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
         @keyframes pulse {
           0%, 100% { opacity: 0.3; }
           50% { opacity: 0.8; }
+        }
+
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-8px); }
         }
       `}</style>
     </div>
