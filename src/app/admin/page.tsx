@@ -45,7 +45,7 @@ export default async function AdminPage() {
       <header className="border-b border-white/[0.04] bg-[#041c45]/60 backdrop-blur-xl sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Image src="/brand/MP26.svg" alt="Monday + Partners" width={44} height={44} className="brightness-0 invert opacity-90" />
+            <Image src="/brand/MP26.svg" alt="Monday + Partners" width={56} height={56} className="brightness-0 invert opacity-90" />
             <span className="text-[10px] tracking-[0.25em] uppercase text-white/40">Admin</span>
           </div>
           <div className="flex items-center gap-6">
@@ -82,9 +82,9 @@ export default async function AdminPage() {
           <Image
             src="/brand/tagline_bug.svg"
             alt="Clarity - Conjuring - Currency"
-            width={150}
-            height={150}
-            className="brightness-0 invert opacity-50"
+            width={80}
+            height={80}
+            className="brightness-0 invert opacity-75"
           />
         </div>
       </footer>

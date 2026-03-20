@@ -176,7 +176,7 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-[#041c45]/60 backdrop-blur-xl border-b border-white/[0.04]">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Image src="/brand/MP26.svg" alt="Monday + Partners" width={36} height={36} className="opacity-90" />
+          <Image src="/brand/MP26.svg" alt="Monday + Partners" width={56} height={56} className="brightness-0 invert opacity-90" />
 
           <div className="hidden md:flex items-center gap-0.5">
             {SECTIONS.map(({ id, label }) => (
@@ -629,9 +629,9 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
           <Image
             src="/brand/tagline_bug.svg"
             alt="Clarity - Conjuring - Currency — Monday + Partners"
-            width={160}
-            height={30}
-            className="opacity-50 hover:opacity-70 transition-opacity duration-500"
+            width={80}
+            height={80}
+            className="brightness-0 invert opacity-75"
           />
           <p className="text-[10px] text-white/20 tracking-[0.2em] uppercase">
             © 2026 Monday + Partners
