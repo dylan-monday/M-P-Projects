@@ -629,9 +629,9 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
           <Image
             src="/brand/tagline_bug.svg"
             alt="Clarity. Conjunction. Currency. — Monday + Partners"
-            width={320}
-            height={60}
-            className="opacity-60 hover:opacity-80 transition-opacity duration-500"
+            width={160}
+            height={30}
+            className="opacity-50 hover:opacity-70 transition-opacity duration-500"
           />
           <p className="text-[10px] text-white/20 tracking-[0.2em] uppercase">
             © 2026 Monday + Partners
