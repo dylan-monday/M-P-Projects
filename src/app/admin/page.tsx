@@ -1,10 +1,8 @@
-import Link from "next/link";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Logo } from "@/components/layout";
-import { Button, Card, CardContent, StatusBadge } from "@/components/ui";
-import { formatDate, formatCurrency } from "@/lib/utils";
-import type { Project } from "@/types";
+import { ProjectList, EmptyState } from "./components/project-list";
+import type { Project, Client } from "@/types";
 
 export default async function AdminPage() {
   const supabase = await createClient();
@@ -32,80 +30,67 @@ export default async function AdminPage() {
     console.error("Error fetching projects:", error);
   }
 
+  const typedProjects = (projects || []) as (Project & { client: Client })[];
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen relative">
+      {/* Background */}
+      <div className="fixed inset-0 bg-gradient-to-b from-[#041c45] via-[#020f24] to-[#010812] -z-20" />
+      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-gold-500/[0.02] rounded-full blur-[120px]" />
+        <div className="absolute bottom-1/3 left-1/4 w-[400px] h-[400px] bg-navy-300/[0.03] rounded-full blur-[100px]" />
+      </div>
+
       {/* Header */}
-      <header className="border-b border-border">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Logo size="sm" href="/admin" />
-            <span className="text-sm text-foreground-muted">Admin</span>
-          </div>
+      <header className="border-b border-white/[0.04] bg-[#041c45]/60 backdrop-blur-xl sticky top-0 z-50">
+        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <span className="text-sm text-foreground-muted">{user.email}</span>
+            <Image src="/brand/MP26.svg" alt="Monday + Partners" width={32} height={32} className="opacity-90" />
+            <span className="text-[10px] tracking-[0.25em] uppercase text-white/30">Admin</span>
+          </div>
+          <div className="flex items-center gap-6">
+            <span className="text-sm text-white/40 font-light">{user.email}</span>
             <form action="/api/auth/logout" method="GET">
-              <Button variant="ghost" size="sm" type="submit">
+              <button
+                type="submit"
+                className="text-[10px] tracking-[0.2em] uppercase text-white/40 hover:text-white/70 transition-colors duration-300"
+              >
                 Log Out
-              </Button>
+              </button>
             </form>
           </div>
         </div>
       </header>
 
       {/* Main */}
-      <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-12">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-semibold">Projects</h1>
-          <Link href="/admin/new">
-            <Button>+ New Project</Button>
-          </Link>
+      <main className="max-w-5xl mx-auto px-6 py-16">
+        <div className="mb-12">
+          <h1 className="text-3xl font-extralight tracking-tight text-white/90">Projects</h1>
+          <p className="text-sm text-white/35 font-light mt-2">Manage client projects and proposals</p>
         </div>
 
-        {projects && projects.length > 0 ? (
-          <div className="grid gap-4">
-            {projects.map((project: Project & { client: { name: string; email: string; company: string } }) => (
-              <Link key={project.id} href={`/admin/${project.slug}`}>
-                <Card interactive className="flex items-center justify-between">
-                  <CardContent className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h2 className="font-medium text-foreground">
-                          {project.title}
-                        </h2>
-                        <p className="text-sm text-foreground-muted">
-                          {project.client?.name} · {project.client?.company}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <p className="text-sm font-medium">
-                            {formatCurrency((project.deposit_amount || 0) + (project.final_amount || 0))}
-                          </p>
-                          <p className="text-xs text-foreground-muted">
-                            {formatDate(project.created_at)}
-                          </p>
-                        </div>
-                        <StatusBadge status={project.status} />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
+        {typedProjects.length > 0 ? (
+          <ProjectList projects={typedProjects} />
         ) : (
-          <Card>
-            <CardContent className="text-center py-12">
-              <p className="text-foreground-muted mb-4">
-                No projects yet.
-              </p>
-              <Link href="/admin/new">
-                <Button>Create First Project</Button>
-              </Link>
-            </CardContent>
-          </Card>
+          <EmptyState />
         )}
       </main>
+
+      {/* Footer */}
+      <footer className="border-t border-white/[0.03] py-8 px-6 mt-auto">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
+          <Image
+            src="/brand/tagline_bug.svg"
+            alt="Clarity. Conjunction. Currency."
+            width={200}
+            height={40}
+            className="opacity-40"
+          />
+          <p className="text-[10px] text-white/20 tracking-[0.15em] uppercase">
+            Monday + Partners
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
