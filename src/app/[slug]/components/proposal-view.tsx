@@ -628,7 +628,7 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
         <div className="max-w-4xl mx-auto flex flex-col items-center gap-8">
           <Image
             src="/brand/tagline_bug.svg"
-            alt="Clarity. Conjunction. Currency. — Monday + Partners"
+            alt="Clarity - Conjuring - Currency — Monday + Partners"
             width={160}
             height={30}
             className="opacity-50 hover:opacity-70 transition-opacity duration-500"

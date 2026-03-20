@@ -81,7 +81,7 @@ export default async function AdminPage() {
         <div className="flex justify-center">
           <Image
             src="/brand/tagline_bug.svg"
-            alt="Clarity. Conjunction. Currency."
+            alt="Clarity - Conjuring - Currency"
             width={150}
             height={150}
             className="brightness-0 invert opacity-50"
