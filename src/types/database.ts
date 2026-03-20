@@ -28,11 +28,13 @@ export interface Project {
   status: ProjectStatus;
   deposit_amount: number; // in cents
   deposit_stripe_price_id: string | null;
-  deposit_stripe_payment_id: string | null;
+  deposit_stripe_session_id: string | null;
+  deposit_paid: boolean;
   deposit_paid_at: string | null;
   final_amount: number; // in cents
   final_stripe_price_id: string | null;
-  final_stripe_payment_id: string | null;
+  final_stripe_session_id: string | null;
+  final_paid: boolean;
   final_paid_at: string | null;
   proposal_pdf_url: string | null;
   created_at: string;
@@ -57,6 +59,7 @@ export interface Deliverable {
   id: string;
   project_id: string;
   title: string;
+  description: string | null;
   type: DeliverableType;
   url: string;
   visible: boolean;
@@ -124,11 +127,13 @@ export interface ProjectUpdate {
   status?: ProjectStatus;
   deposit_amount?: number;
   deposit_stripe_price_id?: string | null;
-  deposit_stripe_payment_id?: string | null;
+  deposit_stripe_session_id?: string | null;
+  deposit_paid?: boolean;
   deposit_paid_at?: string | null;
   final_amount?: number;
   final_stripe_price_id?: string | null;
-  final_stripe_payment_id?: string | null;
+  final_stripe_session_id?: string | null;
+  final_paid?: boolean;
   final_paid_at?: string | null;
   proposal_pdf_url?: string | null;
 }

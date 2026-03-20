@@ -13,7 +13,10 @@
 
 import { createClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
-import "dotenv/config";
+import { config } from "dotenv";
+
+// Load .env.local for Next.js projects
+config({ path: ".env.local" });
 
 // Initialize clients
 const supabase = createClient(
