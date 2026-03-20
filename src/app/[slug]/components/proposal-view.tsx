@@ -1,14 +1,13 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
+import Image from "next/image";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Logo } from "@/components/layout";
 import { Button } from "@/components/ui";
 import { formatCurrency } from "@/lib/utils";
 import type { ProjectWithRelations } from "../page";
 
-// Register GSAP plugins
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
@@ -19,64 +18,77 @@ interface ProposalViewProps {
   isAdmin: boolean;
 }
 
-// Section IDs for navigation
 const SECTIONS = [
   { id: "hero", label: "Start" },
-  { id: "problem", label: "The Problem" },
-  { id: "vision", label: "The Vision" },
-  { id: "lgm-features", label: "LGM" },
-  { id: "ppp-features", label: "PPP" },
-  { id: "ecosystem", label: "Ecosystem" },
-  { id: "numbers", label: "Investment" },
-  { id: "offer", label: "The Offer" },
+  { id: "problem", label: "Problem" },
+  { id: "vision", label: "Vision" },
+  { id: "lgm", label: "LGM" },
+  { id: "ppp", label: "PPP" },
+  { id: "investment", label: "Investment" },
+  { id: "offer", label: "Accept" },
 ];
+
+// Subtle bell sound for interactions
+function playBell(volume = 0.15) {
+  if (typeof window === "undefined") return;
+  const audio = new AudioContext();
+  const oscillator = audio.createOscillator();
+  const gain = audio.createGain();
+  oscillator.connect(gain);
+  gain.connect(audio.destination);
+  oscillator.frequency.setValueAtTime(880, audio.currentTime);
+  oscillator.type = "sine";
+  gain.gain.setValueAtTime(volume, audio.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + 0.8);
+  oscillator.start();
+  oscillator.stop(audio.currentTime + 0.8);
+}
 
 export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeSection, setActiveSection] = useState("hero");
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
 
-  // Initialize GSAP animations
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // Fade in elements as they enter viewport
-      gsap.utils.toArray<HTMLElement>(".fade-up").forEach((el) => {
-        gsap.fromTo(
-          el,
-          { opacity: 0, y: 40 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.8,
-            ease: "power2.out",
-            scrollTrigger: {
-              trigger: el,
-              start: "top 85%",
-              toggleActions: "play none none none",
-            },
-          }
-        );
-      });
+      // Subtle fade-in for elements
+      gsap.utils.toArray<HTMLElement>("[data-animate]").forEach((el) => {
+        const type = el.dataset.animate;
 
-      // Stagger fade for lists
-      gsap.utils.toArray<HTMLElement>(".stagger-container").forEach((container) => {
-        const items = container.querySelectorAll(".stagger-item");
-        gsap.fromTo(
-          items,
-          { opacity: 0, y: 30 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.6,
-            stagger: 0.15,
-            ease: "power2.out",
-            scrollTrigger: {
-              trigger: container,
-              start: "top 80%",
-              toggleActions: "play none none none",
-            },
-          }
-        );
+        if (type === "fade") {
+          gsap.fromTo(el,
+            { opacity: 0, y: 24 },
+            {
+              opacity: 1,
+              y: 0,
+              duration: 0.9,
+              ease: "power2.out",
+              scrollTrigger: {
+                trigger: el,
+                start: "top 88%",
+                toggleActions: "play none none none",
+              },
+            }
+          );
+        }
+
+        if (type === "stagger") {
+          gsap.fromTo(el.children,
+            { opacity: 0, y: 20 },
+            {
+              opacity: 1,
+              y: 0,
+              duration: 0.7,
+              stagger: 0.1,
+              ease: "power2.out",
+              scrollTrigger: {
+                trigger: el,
+                start: "top 85%",
+                toggleActions: "play none none none",
+              },
+            }
+          );
+        }
       });
 
       // Track active section
@@ -94,36 +106,25 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
     return () => ctx.revert();
   }, []);
 
-  const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
-    }
-  };
+  const scrollToSection = useCallback((id: string) => {
+    playBell(0.1);
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: "smooth" });
+  }, []);
 
   const handleCheckout = async () => {
+    playBell(0.2);
     setIsCheckoutLoading(true);
     try {
-      const response = await fetch("/api/stripe/checkout", {
+      const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          projectId: project.id,
-          paymentType: "deposit",
-        }),
+        body: JSON.stringify({ projectId: project.id, paymentType: "deposit" }),
       });
-
-      const { url, error } = await response.json();
-
-      if (error) {
-        console.error("Checkout error:", error);
-        alert("Something went wrong. Please try again.");
-        return;
-      }
-
+      const { url, error } = await res.json();
+      if (error) throw new Error(error);
       window.location.href = url;
-    } catch (err) {
-      console.error("Checkout error:", err);
+    } catch {
       alert("Something went wrong. Please try again.");
     } finally {
       setIsCheckoutLoading(false);
@@ -131,584 +132,600 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
   };
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-background text-foreground">
-      {/* Sticky Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Logo size="sm" href={undefined} />
-          <div className="hidden md:flex items-center gap-1">
+    <div ref={containerRef} className="relative text-white selection:bg-gold-500/30 selection:text-white">
+      {/* Base gradient - navy to deeper navy */}
+      <div className="fixed inset-0 bg-gradient-to-b from-[#041c45] via-[#020f24] to-[#010812] -z-20" />
+
+      {/* Subtle ambient color washes */}
+      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-gold-500/[0.03] rounded-full blur-[150px]" />
+        <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-navy-300/[0.03] rounded-full blur-[120px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-gold-400/[0.02] rounded-full blur-[100px]" />
+      </div>
+
+      {/* Subtle grain texture */}
+      <div className="fixed inset-0 -z-5 opacity-[0.025] pointer-events-none mix-blend-overlay">
+        <svg className="w-full h-full">
+          <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="4" stitchTiles="stitch" /></filter>
+          <rect width="100%" height="100%" filter="url(#grain)" />
+        </svg>
+      </div>
+
+      {/* Navigation */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#041c45]/60 backdrop-blur-xl border-b border-white/[0.04]">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <Image src="/brand/MP26.svg" alt="Monday + Partners" width={36} height={36} className="opacity-90" />
+
+          <div className="hidden md:flex items-center gap-0.5">
             {SECTIONS.map(({ id, label }) => (
               <button
                 key={id}
                 onClick={() => scrollToSection(id)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
+                className={`px-3.5 py-2 text-[10px] font-medium tracking-[0.2em] uppercase transition-all duration-500 rounded-sm ${
                   activeSection === id
-                    ? "bg-accent/20 text-accent"
-                    : "text-foreground-muted hover:text-foreground"
+                    ? "text-gold-400 bg-gold-500/10"
+                    : "text-white/40 hover:text-white/70 hover:bg-white/[0.03]"
                 }`}
               >
                 {label}
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-3">
-            {isAdmin && (
-              <span className="text-xs text-foreground-subtle px-2 py-1 bg-surface-800 rounded">
-                Admin View
-              </span>
-            )}
-          </div>
+
+          {isAdmin && (
+            <span className="text-[9px] tracking-[0.25em] uppercase text-white/25 bg-white/[0.03] px-3 py-1.5 rounded-sm">
+              Admin Preview
+            </span>
+          )}
         </div>
       </nav>
 
-      {/* Payment Success Banner */}
+      {/* Payment Success */}
       {paymentStatus === "success" && (
-        <div className="fixed top-16 left-0 right-0 z-40 bg-success/10 border-b border-success/20 px-4 py-3">
-          <p className="text-center text-sm text-success">
-            Payment successful! We&apos;ll be in touch within 24 hours.
-          </p>
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-emerald-500/10 border border-emerald-400/20 backdrop-blur-xl rounded-full px-8 py-3">
+          <p className="text-sm text-emerald-300 tracking-wide">Payment received. We&apos;ll be in touch within 24 hours.</p>
         </div>
       )}
 
-      {/* Hero Section */}
-      <section id="hero" className="min-h-screen flex flex-col items-center justify-center px-4 pt-16">
-        <div className="max-w-3xl mx-auto text-center space-y-8">
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-semibold leading-tight fade-up">
-            Your websites should be
+      {/* ═══════════════════════════════════════════════════════════════════════
+          HERO
+      ═══════════════════════════════════════════════════════════════════════ */}
+      <section id="hero" className="relative min-h-screen flex flex-col items-center justify-center px-6 pt-20">
+        <div className="relative z-10 max-w-4xl mx-auto text-center">
+          <h1 className="text-[clamp(2.2rem,6.5vw,5.5rem)] font-extralight leading-[1.05] tracking-[-0.025em] mb-10 opacity-0 animate-[fadeSlide_1.2s_ease_0.2s_forwards]">
+            Your websites <span className="italic font-light">can</span> be
             <br />
-            <span className="text-accent">your best salespeople.</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold-300 via-gold-400 to-gold-300">your best salespeople.</span>
           </h1>
-          <div className="space-y-2 fade-up">
-            <p className="text-lg text-foreground-muted">
+
+          <div className="space-y-2 opacity-0 animate-[fadeSlide_1s_ease_0.8s_forwards]">
+            <p className="text-base text-white/45 tracking-wide font-light">
               A proposal for {project.client?.company || "your project"}
             </p>
-            <p className="text-sm text-foreground-subtle">
-              Prepared March 2026
+            <p className="text-[11px] text-white/25 tracking-[0.25em] uppercase">
+              March 2026
             </p>
           </div>
-          <div className="pt-8 fade-up">
+
+          <div className="mt-24 opacity-0 animate-[fadeSlide_1s_ease_1.2s_forwards]">
             <button
               onClick={() => scrollToSection("problem")}
-              className="group flex flex-col items-center gap-2 text-foreground-muted hover:text-foreground transition-colors"
+              className="group flex flex-col items-center gap-4 text-white/25 hover:text-white/50 transition-colors duration-700"
             >
-              <span className="text-sm">Scroll to explore</span>
-              <svg
-                className="w-5 h-5 animate-bounce"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 14l-7 7m0 0l-7-7m7 7V3"
-                />
-              </svg>
+              <span className="text-[9px] tracking-[0.35em] uppercase">Explore</span>
+              <div className="w-px h-16 bg-gradient-to-b from-white/30 to-transparent relative overflow-hidden">
+                <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-gold-400/60 to-transparent animate-[pulse_3s_ease-in-out_infinite]" />
+              </div>
             </button>
           </div>
         </div>
       </section>
 
-      {/* The Problem */}
-      <section id="problem" className="min-h-screen py-32 px-4">
-        <div className="max-w-4xl mx-auto space-y-32">
-          {/* Setup */}
-          <div className="text-center fade-up">
-            <p className="text-2xl md:text-4xl font-medium leading-relaxed text-foreground-muted">
-              Cinema advertising has the strongest
+      {/* ═══════════════════════════════════════════════════════════════════════
+          THE PROBLEM
+      ═══════════════════════════════════════════════════════════════════════ */}
+      <section id="problem" className="relative py-40 px-6">
+        <div className="max-w-5xl mx-auto">
+          <p className="text-[clamp(1.4rem,3.5vw,2.4rem)] font-extralight leading-[1.4] text-white/70 max-w-3xl" data-animate="fade">
+            Cinema advertising has the strongest attention metrics in all of advertising.
+          </p>
+
+          <div className="mt-28 grid md:grid-cols-3 gap-6" data-animate="stagger">
+            <StatCard number={97} suffix="%" label="of moviegoers watch cinema ads" />
+            <StatCard number={4} suffix="–7×" label="more attention than TV or digital" />
+            <StatCard number={76} suffix="%" label="recall after a single viewing" />
+          </div>
+
+          <div className="mt-36 text-center" data-animate="fade">
+            <p className="text-[clamp(1.5rem,4vw,2.8rem)] font-extralight leading-[1.3] tracking-[-0.01em]">
+              The web has evolved.
               <br />
-              attention metrics in all of advertising.
+              <span className="text-gold-400 italic font-light">Your sites can too.</span>
             </p>
           </div>
 
-          {/* Stats */}
-          <div className="grid md:grid-cols-3 gap-8 stagger-container">
-            <StatCard value={97} suffix="%" label="of moviegoers watch cinema ads" />
-            <StatCard value={4} suffix="-7×" label="more attention than TV or digital" />
-            <StatCard value={76} suffix="%" label="recall after a single viewing" />
+          <div className="mt-24 grid md:grid-cols-2 gap-5" data-animate="stagger">
+            <OpportunityCard
+              domain="lookingglassmedia.com"
+              opportunities={[
+                "Room to showcase the data that sells",
+                "Space for testimonials and creative work",
+                "Modern stack = lower costs, less maintenance",
+                "A site that actively converts visitors",
+              ]}
+            />
+            <OpportunityCard
+              domain="pecanpieproductions.com"
+              opportunities={[
+                "Platform to display thousands of ads produced",
+                "Dual-audience routing for different visitors",
+                "Free from platform lock-in and annual fees",
+                "Your strongest proof points front and center",
+              ]}
+            />
           </div>
 
-          {/* The Turn */}
-          <div className="text-center fade-up">
-            <p className="text-2xl md:text-4xl font-semibold">
-              Neither of your websites
-              <br />
-              <span className="text-accent">communicates any of this.</span>
-            </p>
-          </div>
+          {/* Executive Summary */}
+          <div className="mt-32 max-w-3xl mx-auto" data-animate="fade">
+            <div className="p-8 md:p-10 border border-gold-400/15 bg-gradient-to-br from-gold-400/[0.03] to-transparent rounded-sm">
+              <p className="text-[10px] tracking-[0.4em] uppercase text-gold-400/60 mb-6">Why this proposal</p>
 
-          {/* Site Assessments */}
-          <div className="grid md:grid-cols-2 gap-8 stagger-container">
-            <div className="stagger-item p-6 border border-border rounded-lg bg-surface-900/50">
-              <h3 className="text-lg font-medium text-foreground mb-4">lookingglassmedia.com</h3>
-              <ul className="space-y-2 text-sm text-foreground-muted">
-                <li className="flex items-start gap-2">
-                  <span className="text-error mt-1">→</span>
-                  4 pages of thin content
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-error mt-1">→</span>
-                  No data. No social proof. No creative examples.
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-error mt-1">→</span>
-                  WordPress + GoDaddy. Paid SSL. Maintenance overhead.
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-error mt-1">→</span>
-                  The site doesn&apos;t sell. It barely introduces.
-                </li>
-              </ul>
-            </div>
-            <div className="stagger-item p-6 border border-border rounded-lg bg-surface-900/50">
-              <h3 className="text-lg font-medium text-foreground mb-4">pecanpieproductions.com</h3>
-              <ul className="space-y-2 text-sm text-foreground-muted">
-                <li className="flex items-start gap-2">
-                  <span className="text-warning mt-1">→</span>
-                  Better — but still reads like a template
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-error mt-1">→</span>
-                  Thousands of ads produced. Zero shown.
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-error mt-1">→</span>
-                  Webflow lock-in. $290–$1,000+/year in platform costs.
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-error mt-1">→</span>
-                  Your strongest proof point is invisible.
-                </li>
-              </ul>
+              <p className="text-[clamp(1.1rem,2.5vw,1.4rem)] font-extralight leading-[1.6] text-white/70 mb-6">
+                We see real potential here. Your work in cinema advertising is proven — we believe the websites should reflect that quality and actively generate new business.
+              </p>
+
+              <p className="text-base text-white/45 leading-relaxed font-light mb-6">
+                We&apos;re also using this as a test case for new AI-assisted development tools.
+                It&apos;s how we can deliver this scope at a fraction of typical agency rates.
+              </p>
+
+              <div className="pt-6 border-t border-gold-400/10 flex flex-col md:flex-row gap-4 md:gap-10">
+                <div className="flex items-start gap-3">
+                  <span className="text-gold-400/70 mt-1">✓</span>
+                  <div>
+                    <p className="text-white/70 text-sm font-medium mb-1">You win</p>
+                    <p className="text-white/35 text-sm font-light">Premium quality at an exceptional price point</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-gold-400/70 mt-1">✓</span>
+                  <div>
+                    <p className="text-white/70 text-sm font-medium mb-1">We win</p>
+                    <p className="text-white/35 text-sm font-light">A real-world project to prove our new process</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* The Vision */}
-      <section id="vision" className="min-h-screen py-32 px-4 bg-gradient-to-b from-background to-surface-900">
-        <div className="max-w-4xl mx-auto space-y-16 text-center">
-          <h2 className="text-3xl md:text-5xl font-semibold fade-up">
-            Here&apos;s what I want to build.
+      {/* ═══════════════════════════════════════════════════════════════════════
+          THE VISION
+      ═══════════════════════════════════════════════════════════════════════ */}
+      <section id="vision" className="relative py-40 px-6">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-gold-500/[0.02] to-transparent pointer-events-none" />
+
+        <div className="relative max-w-4xl mx-auto text-center">
+          <p className="text-[10px] tracking-[0.4em] uppercase text-gold-400/60 mb-10" data-animate="fade">
+            The Vision
+          </p>
+
+          <h2 className="text-[clamp(1.8rem,5vw,4rem)] font-extralight leading-[1.15] tracking-[-0.02em] mb-16" data-animate="fade">
+            Two new sites. One shared engine.
+            <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold-200 via-gold-300 to-gold-200 italic font-light">Built to sell.</span>
           </h2>
-          <div className="space-y-6 fade-up">
-            <p className="text-2xl md:text-3xl text-foreground-muted">
-              Two new sites. One shared engine.
-              <br />
-              <span className="text-accent font-medium">Built to sell.</span>
-            </p>
+
+          <div className="flex flex-wrap justify-center gap-3 mb-16" data-animate="stagger">
+            {["Dark. Cinematic.", "Data-driven.", "Fast. Beautiful."].map((text) => (
+              <span key={text} className="px-5 py-2.5 border border-gold-400/20 bg-gold-400/[0.03] text-gold-200/80 text-sm tracking-wide font-light">
+                {text}
+              </span>
+            ))}
           </div>
-          <div className="grid md:grid-cols-3 gap-6 pt-8 stagger-container">
-            <div className="stagger-item p-6 border border-accent/30 rounded-lg bg-accent/5">
-              <p className="text-lg font-medium text-accent">Dark. Cinematic.</p>
-            </div>
-            <div className="stagger-item p-6 border border-accent/30 rounded-lg bg-accent/5">
-              <p className="text-lg font-medium text-accent">Data-driven.</p>
-            </div>
-            <div className="stagger-item p-6 border border-accent/30 rounded-lg bg-accent/5">
-              <p className="text-lg font-medium text-accent">Fast. Beautiful.</p>
-            </div>
-          </div>
-          <p className="text-xl text-foreground-muted fade-up pt-8">
+
+          <p className="text-lg text-white/35 font-light" data-animate="fade">
             Websites that feel like the medium you work in.
           </p>
         </div>
       </section>
 
-      {/* What LGM Gets */}
-      <section id="lgm-features" className="py-32 px-4">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-semibold mb-16 fade-up">
-            What Looking Glass Media gets
-          </h2>
-          <div className="space-y-24 stagger-container">
-            <FeatureBeat
-              title="An interactive stats page"
-              description="That makes the case for cinema in 30 seconds. Animated. Shareable. Built for your sales team to use every single day."
+      {/* ═══════════════════════════════════════════════════════════════════════
+          WHAT LGM GETS
+      ═══════════════════════════════════════════════════════════════════════ */}
+      <section id="lgm" className="relative py-40 px-6">
+        <div className="max-w-5xl mx-auto">
+          <div className="mb-20" data-animate="fade">
+            <p className="text-[10px] tracking-[0.4em] uppercase text-gold-500/70 mb-4">For Looking Glass Media</p>
+            <h2 className="text-[clamp(1.6rem,4vw,2.8rem)] font-extralight tracking-tight">
+              A sales machine that works
+              <span className="text-gold-400 italic"> while you sleep.</span>
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-5" data-animate="stagger">
+            <FeatureCard
+              number="01"
+              title="Interactive Stats Engine"
+              description="Makes the case for cinema advertising in 30 seconds. Animated counters. Shareable links. The tool your sales team will use every single day."
+              highlight="Converts skeptics into believers"
             />
-            <FeatureBeat
-              title="In-theater lead capture"
-              description="A QR code in your own preshow ad. Scan. Submit. Watch the movie. Stats kit in their inbox an hour later. It's not just a lead capture tool — it's a live proof of concept."
+            <FeatureCard
+              number="02"
+              title="In-Theater Lead Capture"
+              description="Your preshow ad includes a QR code. Scan → Submit → Watch the movie. Stats kit lands in their inbox before the credits roll."
+              highlight="Live proof of concept in action"
             />
-            <FeatureBeat
-              title="Text-to-info flow"
-              description="Text BIGSCREEN to 55555. They text during the preshow. Enjoy the movie. Everything they need is in their pocket by the time the credits roll."
+            <FeatureCard
+              number="03"
+              title="Text-to-Info Flow"
+              description="Text BIGSCREEN to 55555. They text during the preshow. By the credits, everything they need is in their pocket."
+              highlight="Frictionless prospect capture"
             />
-            <FeatureBeat
-              title="Smart ad upload"
-              description="Already have an ad? Upload it. Don't have one? We'll show you exactly what we'll build. Plain-English specs. Drag-and-drop. No back-and-forth."
+            <FeatureCard
+              number="04"
+              title="Smart Ad Upload"
+              description="Already have an ad? Upload it instantly. Don't have one? Plain-English specs show exactly what we'll build. Zero back-and-forth."
+              highlight="Removes friction from onboarding"
             />
-            <FeatureBeat
-              title="Automated follow-up"
-              description="Every form, every scan, every text triggers a smart email sequence. The right stat at the right moment. A testimonial that hits close to their industry. Built once. Runs forever."
+            <FeatureCard
+              number="05"
+              title="Automated Nurture Sequences"
+              description="Every form, scan, and text triggers a smart email sequence. The right stat at the right moment. Built once, runs forever."
+              highlight="Sells while you focus elsewhere"
             />
-            <FeatureBeat
-              title="Stats Kit PDF"
-              description="A designed leave-behind your team can send, share, and forward. Not a brochure. A weapon."
+            <FeatureCard
+              number="06"
+              title="Stats Kit PDF Generator"
+              description="A designed, branded leave-behind your team can send, share, and forward. Not a brochure — a weapon."
+              highlight="Professional collateral on demand"
             />
           </div>
         </div>
       </section>
 
-      {/* What PPP Gets */}
-      <section id="ppp-features" className="py-32 px-4 bg-surface-900">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-semibold mb-16 fade-up">
-            What Pecan Pie Productions gets
-          </h2>
-          <div className="space-y-24 stagger-container">
-            <FeatureBeat
-              title="A real creative showcase"
-              description="PPP has produced thousands of ads. The new site shows them off. Organized by industry. Cinematic viewing experience. This page alone is worth the project."
+      {/* ═══════════════════════════════════════════════════════════════════════
+          WHAT PPP GETS
+      ═══════════════════════════════════════════════════════════════════════ */}
+      <section id="ppp" className="relative py-40 px-6">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-gold-500/[0.015] to-transparent pointer-events-none" />
+
+        <div className="relative max-w-5xl mx-auto">
+          <div className="mb-20" data-animate="fade">
+            <p className="text-[10px] tracking-[0.4em] uppercase text-gold-500/70 mb-4">For Pecan Pie Productions</p>
+            <h2 className="text-[clamp(1.6rem,4vw,2.8rem)] font-extralight tracking-tight">
+              Show what you&apos;ve built.
+              <span className="text-gold-400 italic"> Close what you deserve.</span>
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-5" data-animate="stagger">
+            <FeatureCard
+              number="01"
+              title="Cinematic Creative Showcase"
+              description="Thousands of ads produced. The new site shows them off beautifully. Organized by industry. Full-screen viewing experience."
+              highlight="Your work finally on display"
             />
-            <FeatureBeat
-              title="Dual-audience intelligence"
+            <FeatureCard
+              number="02"
+              title="Dual-Audience Routing"
               description="Advertisers and theater operators see completely different sites. Same URL. Two perfectly tuned sales experiences."
+              highlight="One site, two perfect pitches"
             />
-            <FeatureBeat
-              title="Theater revenue model — explained"
-              description="Theater operators will finally understand exactly how the partnership works — and why they should say yes."
+            <FeatureCard
+              number="03"
+              title="Theater Revenue Model"
+              description="Theater operators will finally understand exactly how the partnership works — and why saying yes is the obvious choice."
+              highlight="Objections answered before asked"
             />
-            <FeatureBeat
-              title="Social proof done right"
-              description="Penn Cinema. 18 years. Lucas Cinemas. 'Big-agency capability, small-business heart.' Spotlight Theaters. 10+ years. These testimonials deserve more than a Webflow carousel."
+            <FeatureCard
+              number="04"
+              title="Strategic Social Proof"
+              description="Penn Cinema. 18 years. Lucas Cinemas. Spotlight Theaters. 10+ years. Testimonials that build instant credibility."
+              highlight="Trust built at first glance"
             />
           </div>
         </div>
       </section>
 
-      {/* The Shared Ecosystem */}
-      <section id="ecosystem" className="py-32 px-4">
+      {/* ═══════════════════════════════════════════════════════════════════════
+          THE INVESTMENT
+      ═══════════════════════════════════════════════════════════════════════ */}
+      <section id="investment" className="relative py-40 px-6">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-semibold mb-16 fade-up">
-            The shared ecosystem
-          </h2>
-          <div className="space-y-24 stagger-container">
-            <FeatureBeat
-              title="Shared content library"
-              description="One testimonial library. One logo library. One stats engine. Update once. Both sites update instantly."
+          <p className="text-[10px] tracking-[0.4em] uppercase text-gold-400/60 mb-16" data-animate="fade">
+            The Investment
+          </p>
+
+          <div className="grid md:grid-cols-2 gap-5 mb-28" data-animate="stagger">
+            <CostCard
+              title="Current annual costs"
+              items={[
+                ["GoDaddy + WordPress (LGM)", "$150–$440"],
+                ["Webflow + Workspace (PPP)", "$290–$1,000"],
+              ]}
+              total="$440–$1,440+/year"
+              negative
             />
-            <FeatureBeat
-              title="Simple admin dashboard"
-              description="Add a testimonial. Upload a logo. Change a stat. Publish a new ad. A clean, simple tool built for you — not a bloated CMS built for everyone."
-            />
-            <FeatureBeat
-              title="Live industry data (Phase 2)"
-              description="Box office numbers. Upcoming releases. Industry headlines. Your sites stay current without anyone writing a blog post."
+            <CostCard
+              title="New annual costs"
+              items={[
+                ["Hosting (both sites)", "$0–$240"],
+                ["SSL + CMS", "$0"],
+              ]}
+              total="$30–$378/year"
             />
           </div>
-        </div>
-      </section>
 
-      {/* The Numbers */}
-      <section id="numbers" className="py-32 px-4 bg-gradient-to-b from-background to-surface-900">
-        <div className="max-w-4xl mx-auto space-y-24">
-          <h2 className="text-3xl md:text-4xl font-semibold fade-up">
-            The investment
-          </h2>
-
-          {/* Current vs New Costs */}
-          <div className="grid md:grid-cols-2 gap-8 stagger-container">
-            <div className="stagger-item p-8 border border-error/30 rounded-lg bg-error/5">
-              <h3 className="text-sm font-medium text-error mb-4">CURRENT ANNUAL PLATFORM COSTS</h3>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-foreground-muted">GoDaddy + WordPress (LGM)</span>
-                  <span>$150–$440</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-foreground-muted">Webflow + Workspace (PPP)</span>
-                  <span>$290–$1,000</span>
-                </div>
-                <div className="pt-3 border-t border-error/20 flex justify-between font-medium">
-                  <span>Total</span>
-                  <span className="text-error">$440–$1,440+/year</span>
-                </div>
-              </div>
-            </div>
-            <div className="stagger-item p-8 border border-success/30 rounded-lg bg-success/5">
-              <h3 className="text-sm font-medium text-success mb-4">NEW ANNUAL PLATFORM COSTS</h3>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-foreground-muted">Hosting (both sites)</span>
-                  <span>$0–$240</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-foreground-muted">SSL + CMS</span>
-                  <span>$0</span>
-                </div>
-                <div className="pt-3 border-t border-success/20 flex justify-between font-medium">
-                  <span>Total</span>
-                  <span className="text-success">$30–$378/year</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* ROI Statement */}
-          <div className="text-center space-y-6 fade-up">
-            <p className="text-xl text-foreground-muted">
-              But the real return isn&apos;t in hosting savings.
-            </p>
-            <p className="text-2xl md:text-3xl font-medium">
-              One additional client per quarter =
+          <div className="text-center mb-28" data-animate="fade">
+            <p className="text-white/35 mb-5 font-light">But the real return isn&apos;t in hosting savings.</p>
+            <p className="text-[clamp(1.3rem,3.5vw,2.2rem)] font-extralight leading-[1.4]">
+              Turn the sites into more powerful sales tools
               <br />
-              <span className="text-accent">the entire project paid for in month one.</span>
+              <span className="text-gold-400 italic font-light">and the entire project is paid in a quarter at most.</span>
             </p>
           </div>
 
-          {/* Agency Comparison */}
-          <div className="p-8 border border-border rounded-lg fade-up">
-            <h3 className="text-sm font-medium text-foreground-subtle mb-6">WHAT THIS WOULD COST AT AN AGENCY</h3>
-            <div className="space-y-2 text-sm mb-6">
-              <div className="flex justify-between">
-                <span className="text-foreground-muted">Strategy & wireframes</span>
-                <span>$5,000–$10,000</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-foreground-muted">Design (2 sites)</span>
-                <span>$8,000–$15,000</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-foreground-muted">Development</span>
-                <span>$15,000–$30,000</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-foreground-muted">Admin dashboard</span>
-                <span>$3,000–$8,000</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-foreground-muted">QR, SMS, email automation</span>
-                <span>$3,000–$6,000</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-foreground-muted">Stats Kit PDF + QA</span>
-                <span>$3,500–$7,000</span>
-              </div>
-              <div className="pt-3 border-t border-border flex justify-between font-medium text-base">
-                <span>Typical total</span>
-                <span className="text-foreground-subtle">$37,500–$76,000</span>
+          <div className="p-8 md:p-10 border border-white/[0.06] bg-white/[0.01] rounded-sm" data-animate="fade">
+            <p className="text-[10px] tracking-[0.3em] uppercase text-white/30 mb-8">What this would cost at an agency</p>
+            <div className="space-y-2.5 text-sm font-light mb-8">
+              {[
+                ["Strategy & wireframes", "$5,000–$10,000"],
+                ["Design (2 sites)", "$8,000–$15,000"],
+                ["Development", "$15,000–$30,000"],
+                ["Admin dashboard", "$3,000–$8,000"],
+                ["QR, SMS, email automation", "$3,000–$6,000"],
+                ["Stats Kit PDF + QA", "$3,500–$7,000"],
+              ].map(([label, value]) => (
+                <div key={label} className="flex justify-between text-white/40">
+                  <span>{label}</span>
+                  <span className="tabular-nums text-white/50">{value}</span>
+                </div>
+              ))}
+              <div className="pt-4 mt-4 border-t border-white/[0.06] flex justify-between">
+                <span className="text-white/50">Typical total</span>
+                <span className="text-white/35 tabular-nums">$37,500–$76,000</span>
               </div>
             </div>
-            <p className="text-xl text-center font-medium text-accent">
-              I&apos;m not proposing anything close to those numbers.
+            <p className="text-xl md:text-2xl text-center text-gold-300/80 font-extralight italic">
+              We&apos;re not proposing anything near these numbers.
             </p>
           </div>
         </div>
       </section>
 
-      {/* The Offer */}
-      <section id="offer" className="py-32 px-4">
-        <div className="max-w-4xl mx-auto space-y-16">
-          <h2 className="text-3xl md:text-4xl font-semibold fade-up">
-            The offer
-          </h2>
+      {/* ═══════════════════════════════════════════════════════════════════════
+          THE OFFER
+      ═══════════════════════════════════════════════════════════════════════ */}
+      <section id="offer" className="relative py-40 px-6">
+        <div className="absolute inset-0 bg-gradient-to-t from-gold-500/[0.03] via-transparent to-transparent pointer-events-none" />
 
-          {/* What's Included */}
-          <div className="p-8 border border-accent/30 rounded-lg bg-accent/5 fade-up">
-            <h3 className="text-sm font-medium text-accent mb-6">EVERYTHING INCLUDED</h3>
-            <ul className="grid md:grid-cols-2 gap-3 text-sm text-foreground-muted">
-              <li className="flex items-start gap-2">
-                <span className="text-accent">✓</span>
-                Research, strategy, wireframes (complete)
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-accent">✓</span>
-                Visual design system (2 rounds)
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-accent">✓</span>
-                Full development of both sites
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-accent">✓</span>
-                Shared content library architecture
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-accent">✓</span>
-                Simple admin dashboard
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-accent">✓</span>
-                LGM in-theater QR capture
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-accent">✓</span>
-                LGM text-to-info SMS flow
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-accent">✓</span>
-                LGM automated email sequence
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-accent">✓</span>
-                LGM Stats Kit PDF
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-accent">✓</span>
-                PPP creative showcase
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-accent">✓</span>
-                PPP dual-audience routing
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-accent">✓</span>
-                30 days post-launch support
-              </li>
-            </ul>
+        <div className="relative max-w-3xl mx-auto">
+          <div className="mb-20" data-animate="fade">
+            <p className="text-[10px] tracking-[0.4em] uppercase text-gold-400/60 mb-8">Everything included</p>
+            <div className="grid md:grid-cols-2 gap-x-10 gap-y-2.5 text-white/45 text-sm font-light">
+              {[
+                "Research, strategy, wireframes (complete)",
+                "Visual design system (2 rounds)",
+                "Full development of both sites",
+                "Shared content library",
+                "Simple admin dashboard",
+                "LGM in-theater QR capture",
+                "LGM text-to-info SMS flow",
+                "LGM automated email sequence",
+                "LGM Stats Kit PDF",
+                "PPP creative showcase",
+                "PPP dual-audience routing",
+                "30 days post-launch support",
+              ].map((item) => (
+                <div key={item} className="flex items-start gap-3">
+                  <span className="text-gold-400/70 mt-0.5 text-xs">✓</span>
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Price */}
-          <div className="text-center space-y-8 fade-up">
-            <div className="space-y-2">
-              <p className="text-5xl md:text-7xl font-semibold text-accent">
-                {formatCurrency((project.deposit_amount || 0) + (project.final_amount || 0))}
-              </p>
-              <p className="text-lg text-foreground-muted">total project investment</p>
-            </div>
-            <div className="flex justify-center gap-8 text-sm">
+          <div className="text-center mb-16" data-animate="fade">
+            <p className="text-[clamp(3.5rem,10vw,7rem)] font-extralight text-transparent bg-clip-text bg-gradient-to-b from-gold-200 via-gold-300 to-gold-400/80 leading-none mb-3">
+              {formatCurrency((project.deposit_amount || 0) + (project.final_amount || 0))}
+            </p>
+            <p className="text-white/35 tracking-wide font-light">total project investment</p>
+
+            <div className="flex justify-center gap-10 mt-8 text-sm font-light">
               <div>
-                <p className="font-medium">{formatCurrency(project.deposit_amount || 0)}</p>
-                <p className="text-foreground-subtle">deposit to begin</p>
+                <p className="text-white/80">{formatCurrency(project.deposit_amount || 0)}</p>
+                <p className="text-white/30">deposit to begin</p>
               </div>
               <div>
-                <p className="font-medium">{formatCurrency(project.final_amount || 0)}</p>
-                <p className="text-foreground-subtle">on completion</p>
+                <p className="text-white/80">{formatCurrency(project.final_amount || 0)}</p>
+                <p className="text-white/30">on completion</p>
               </div>
             </div>
           </div>
 
-          {/* Timeline */}
-          <div className="p-8 border border-border rounded-lg fade-up">
-            <h3 className="text-sm font-medium text-foreground-subtle mb-6">TIMELINE</h3>
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-foreground-muted">Research & wireframes</span>
-                <span className="text-success">✓ Complete</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-foreground-muted">Design direction</span>
-                <span>1 week</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-foreground-muted">Design + development</span>
-                <span>3–4 weeks</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-foreground-muted">QA + launch</span>
-                <span>1 week</span>
-              </div>
-              <div className="pt-3 border-t border-border flex justify-between font-medium">
-                <span>Total</span>
-                <span>~5–6 weeks from go</span>
+          <div className="mb-20 p-7 border border-white/[0.06] rounded-sm" data-animate="fade">
+            <p className="text-[10px] tracking-[0.3em] uppercase text-white/30 mb-5">Timeline</p>
+            <div className="space-y-2 text-sm font-light">
+              {[
+                ["Research & wireframes", "✓ Complete", true],
+                ["Design direction", "1 week", false],
+                ["Design + development", "3–4 weeks", false],
+                ["QA + launch", "1 week", false],
+              ].map(([phase, duration, complete]) => (
+                <div key={phase as string} className="flex justify-between text-white/40">
+                  <span>{phase}</span>
+                  <span className={complete ? "text-emerald-400/80" : "text-white/55 tabular-nums"}>{duration}</span>
+                </div>
+              ))}
+              <div className="pt-3 mt-3 border-t border-white/[0.06] flex justify-between">
+                <span className="text-white/50">Total</span>
+                <span className="text-white/70">~5–6 weeks from go</span>
               </div>
             </div>
           </div>
 
-          {/* CTA */}
-          <div className="text-center space-y-6 py-8 fade-up">
-            <h3 className="text-2xl md:text-3xl font-semibold">Ready to start?</h3>
+          <div className="text-center" data-animate="fade">
+            <h3 className="text-2xl md:text-3xl font-extralight mb-8 tracking-tight">
+              Ready to start?
+            </h3>
             <Button
               size="lg"
               onClick={handleCheckout}
               isLoading={isCheckoutLoading}
-              className="text-lg px-8 py-4"
+              className="px-10 py-5 text-base bg-gradient-to-r from-gold-400 to-gold-500 hover:from-gold-300 hover:to-gold-400 text-[#041c45] font-medium tracking-wide rounded-none transition-all duration-500"
             >
               Accept & Pay Deposit — {formatCurrency(project.deposit_amount || 0)}
             </Button>
-            <p className="text-sm text-foreground-subtle">
+            <p className="mt-6 text-sm text-white/25 font-light">
               Questions? Email dylan@mondayandpartners.com
             </p>
           </div>
 
-          {/* Terms */}
-          <div className="text-xs text-foreground-subtle space-y-2 pt-8 border-t border-border fade-up">
-            <p><strong>Terms:</strong></p>
-            <ul className="space-y-1 list-disc list-inside">
-              <li>50% deposit due on acceptance, 50% due on completion approval</li>
-              <li>2 rounds of design revision included</li>
-              <li>30 days post-launch support included</li>
-              <li>Client provides: content assets, brand files, testimonial approvals, ad samples</li>
-              <li>Hosting migration and domain configuration included</li>
-            </ul>
+          <div className="mt-20 pt-8 border-t border-white/[0.04] text-[11px] text-white/25 space-y-1 font-light" data-animate="fade">
+            <p className="text-white/35 mb-2">Terms</p>
+            <p>50% deposit due on acceptance, 50% due on completion approval</p>
+            <p>2 rounds of design revision included · 30 days post-launch support</p>
+            <p>Client provides: content assets, brand files, testimonial approvals</p>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-12 px-4 border-t border-border">
-        <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <Logo size="sm" href={undefined} />
-          <p className="text-xs text-foreground-subtle">
-            © 2026 Monday + Partners. All rights reserved.
+      {/* Footer with tagline bug */}
+      <footer className="py-20 px-6 border-t border-white/[0.03]">
+        <div className="max-w-4xl mx-auto flex flex-col items-center gap-8">
+          <Image
+            src="/brand/tagline_bug.svg"
+            alt="Clarity. Conjunction. Currency. — Monday + Partners"
+            width={320}
+            height={60}
+            className="opacity-60 hover:opacity-80 transition-opacity duration-500"
+          />
+          <p className="text-[10px] text-white/20 tracking-[0.2em] uppercase">
+            © 2026 Monday + Partners
           </p>
         </div>
       </footer>
+
+      <style jsx global>{`
+        @keyframes fadeSlide {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 0.8; }
+        }
+      `}</style>
     </div>
   );
 }
 
-// Animated Stat Card Component
-function StatCard({ value, suffix, label }: { value: number; suffix: string; label: string }) {
-  const countRef = useRef<HTMLSpanElement>(null);
-  const hasAnimated = useRef(false);
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPONENTS
+═══════════════════════════════════════════════════════════════════════════ */
+
+function StatCard({ number, suffix, label }: { number: number; suffix: string; label: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const animated = useRef(false);
 
   useEffect(() => {
-    if (!countRef.current || hasAnimated.current) return;
-
+    if (!ref.current || animated.current) return;
     const trigger = ScrollTrigger.create({
-      trigger: countRef.current,
-      start: "top 80%",
+      trigger: ref.current,
+      start: "top 88%",
       onEnter: () => {
-        if (hasAnimated.current) return;
-        hasAnimated.current = true;
-
-        gsap.fromTo(
-          countRef.current,
-          { innerText: 0 },
-          {
-            innerText: value,
-            duration: 1.5,
-            ease: "power2.out",
-            snap: { innerText: 1 },
-            onUpdate: function () {
-              if (countRef.current) {
-                countRef.current.innerText = Math.round(
-                  Number(countRef.current.innerText)
-                ).toString();
-              }
-            },
-          }
-        );
+        if (animated.current) return;
+        animated.current = true;
+        gsap.fromTo(ref.current, { innerText: 0 }, {
+          innerText: number,
+          duration: 1.8,
+          ease: "power2.out",
+          snap: { innerText: 1 },
+          onUpdate() { if (ref.current) ref.current.innerText = Math.round(Number(ref.current.innerText)).toString(); }
+        });
       },
     });
-
     return () => trigger.kill();
-  }, [value]);
+  }, [number]);
 
   return (
-    <div className="stagger-item text-center p-8 border border-accent/30 rounded-lg bg-accent/5">
-      <p className="text-5xl md:text-6xl font-semibold text-accent mb-2">
-        <span ref={countRef}>0</span>
-        <span>{suffix}</span>
+    <div className="group p-7 border border-white/[0.06] bg-white/[0.01] hover:border-gold-400/20 hover:bg-gold-400/[0.02] transition-all duration-700">
+      <p className="text-[clamp(2.5rem,6vw,4rem)] font-extralight text-white/90 leading-none mb-3 tracking-tight">
+        <span ref={ref}>0</span>
+        <span className="text-gold-400/80">{suffix}</span>
       </p>
-      <p className="text-sm text-foreground-muted">{label}</p>
+      <p className="text-sm text-white/35 font-light">{label}</p>
     </div>
   );
 }
 
-// Feature Beat Component
-function FeatureBeat({ title, description }: { title: string; description: string }) {
+function OpportunityCard({ domain, opportunities }: { domain: string; opportunities: string[] }) {
   return (
-    <div className="stagger-item space-y-4">
-      <h3 className="text-xl md:text-2xl font-medium text-accent">
-        &ldquo;{title}&rdquo;
-      </h3>
-      <p className="text-lg text-foreground-muted leading-relaxed max-w-2xl">
-        {description}
-      </p>
+    <div className="p-7 border border-gold-500/15 bg-gold-500/[0.02]">
+      <p className="font-mono text-xs text-white/50 mb-5 tracking-wide">{domain}</p>
+      <ul className="space-y-2.5">
+        {opportunities.map((item, i) => (
+          <li key={i} className="flex items-start gap-3 text-sm text-white/45 font-light">
+            <span className="text-gold-400/70 mt-0.5">+</span>
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function FeatureCard({ number, title, description, highlight }: { number: string; title: string; description: string; highlight: string }) {
+  return (
+    <div className="group p-6 border border-white/[0.06] bg-white/[0.015] hover:border-gold-400/20 hover:bg-gold-400/[0.02] transition-all duration-500 relative overflow-hidden">
+      {/* Subtle gradient on hover */}
+      <div className="absolute inset-0 bg-gradient-to-br from-gold-400/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+      <div className="relative">
+        {/* Number badge */}
+        <span className="inline-block text-[10px] tracking-[0.3em] text-gold-400/60 font-medium mb-4">
+          {number}
+        </span>
+
+        {/* Title */}
+        <h3 className="text-lg md:text-xl font-light text-white/90 mb-3 tracking-tight group-hover:text-gold-200/90 transition-colors duration-500">
+          {title}
+        </h3>
+
+        {/* Description */}
+        <p className="text-sm text-white/40 leading-relaxed mb-5 font-light">
+          {description}
+        </p>
+
+        {/* Highlight pill */}
+        <span className="inline-block text-[10px] tracking-[0.15em] uppercase text-gold-300/70 bg-gold-400/10 px-3 py-1.5 rounded-sm">
+          {highlight}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function CostCard({ title, items, total, negative = false }: { title: string; items: string[][]; total: string; negative?: boolean }) {
+  const color = negative ? "rose" : "emerald";
+  return (
+    <div className={`p-7 border border-${color}-400/10 bg-${color}-400/[0.02]`}>
+      <p className={`text-[10px] tracking-[0.3em] uppercase text-${color}-400/50 mb-5`}>{title}</p>
+      <div className="space-y-2 text-sm font-light mb-5">
+        {items.map(([label, value]) => (
+          <div key={label} className="flex justify-between text-white/40">
+            <span>{label}</span>
+            <span className="tabular-nums text-white/50">{value}</span>
+          </div>
+        ))}
+      </div>
+      <div className={`pt-4 border-t border-${color}-400/10 flex justify-between`}>
+        <span className="text-white/50 font-light">Total</span>
+        <span className={`text-${color}-400/70 tabular-nums`}>{total}</span>
+      </div>
     </div>
   );
 }

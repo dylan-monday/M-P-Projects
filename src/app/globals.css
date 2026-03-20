@@ -141,6 +141,32 @@
   --color-border-subtle: var(--border-subtle);
   --color-ring: var(--ring);
 
+  /* Premium Navy Palette */
+  --color-navy-50: #07337d;
+  --color-navy-100: #073077;
+  --color-navy-200: #062b6a;
+  --color-navy-300: #05265e;
+  --color-navy-400: #052151;
+  --color-navy-500: #041c45;
+  --color-navy-600: #03183a;
+  --color-navy-700: #03132f;
+  --color-navy-800: #020f24;
+  --color-navy-900: #010a19;
+  --color-navy-950: #010813;
+
+  /* Premium Gold Palette */
+  --color-gold-50: #ffff79;
+  --color-gold-100: #ffff73;
+  --color-gold-200: #ffff67;
+  --color-gold-300: #ffe45b;
+  --color-gold-400: #fac64f;
+  --color-gold-500: #d4a843;
+  --color-gold-600: #b28d38;
+  --color-gold-700: #90722e;
+  --color-gold-800: #6e5723;
+  --color-gold-900: #4c3c18;
+  --color-gold-950: #3b2f13;
+
   /* Brand Colors */
   --color-brand-50: var(--brand-50);
   --color-brand-100: var(--brand-100);
