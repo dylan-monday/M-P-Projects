@@ -214,7 +214,7 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
       ═══════════════════════════════════════════════════════════════════════ */}
       <section id="hero" className="relative min-h-screen flex flex-col items-center justify-center px-6 pt-20">
         <div className="relative z-10 max-w-4xl mx-auto text-center">
-          <h1 className="font-serif text-[clamp(2.2rem,6.5vw,5.5rem)] font-normal leading-[1.05] tracking-[-0.01em] mb-10 opacity-0 animate-[fadeSlide_1.2s_ease_0.2s_forwards]">
+          <h1 className="font-serif text-[clamp(2.2rem,6.5vw,5.5rem)] font-light leading-[1.05] tracking-[-0.01em] mb-10 opacity-0 animate-[fadeSlide_1.2s_ease_0.2s_forwards]">
             Your websites <span className="italic">can</span> be
             <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold-300 via-gold-400 to-gold-300">your best salespeople.</span>
@@ -248,7 +248,7 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
       ═══════════════════════════════════════════════════════════════════════ */}
       <section id="problem" className="relative py-40 px-6">
         <div className="max-w-5xl mx-auto">
-          <p className="font-serif text-[clamp(1.4rem,3.5vw,2.4rem)] font-normal leading-[1.4] text-white/70 max-w-3xl" data-animate="fade">
+          <p className="font-serif text-[clamp(1.4rem,3.5vw,2.4rem)] font-light leading-[1.4] text-white/70 max-w-3xl" data-animate="fade">
             Cinema advertising commands attention like nothing else in the industry.
           </p>
 
@@ -259,7 +259,7 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
           </div>
 
           <div className="mt-36 text-center" data-animate="fade">
-            <p className="font-serif text-[clamp(1.5rem,4vw,2.8rem)] font-normal leading-[1.3] tracking-[-0.01em]">
+            <p className="font-serif text-[clamp(1.5rem,4vw,2.8rem)] font-light leading-[1.3] tracking-[-0.01em]">
               The medium has evolved.
               <br />
               <span className="text-gold-400 italic">Your digital presence should match.</span>
@@ -292,7 +292,7 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
             <div className="p-8 md:p-10 border border-gold-400/15 bg-gradient-to-br from-gold-400/[0.03] to-transparent rounded-sm">
               <p className="text-[10px] tracking-[0.4em] uppercase text-gold-400/60 mb-6">Why this proposal</p>
 
-              <p className="font-serif text-[clamp(1.1rem,2.5vw,1.4rem)] font-normal leading-[1.6] text-white/70 mb-6">
+              <p className="font-serif text-[clamp(1.1rem,2.5vw,1.4rem)] font-light leading-[1.6] text-white/70 mb-6">
                 Your work speaks for itself.<br />
                 The websites should do the same.
               </p>
@@ -334,7 +334,7 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
             The Vision
           </p>
 
-          <h2 className="font-serif text-[clamp(1.8rem,5vw,4rem)] font-normal leading-[1.15] tracking-[-0.01em] mb-16" data-animate="fade">
+          <h2 className="font-serif text-[clamp(1.8rem,5vw,4rem)] font-light leading-[1.15] tracking-[-0.01em] mb-16" data-animate="fade">
             Two new sites.
             <br />
             One shared engine.
@@ -363,7 +363,7 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
         <div className="max-w-5xl mx-auto">
           <div className="mb-20" data-animate="fade">
             <p className="text-[10px] tracking-[0.4em] uppercase text-gold-500/70 mb-4">For Looking Glass Media</p>
-            <h2 className="font-serif text-[clamp(1.6rem,4vw,2.8rem)] font-normal tracking-tight">
+            <h2 className="font-serif text-[clamp(1.6rem,4vw,2.8rem)] font-light tracking-tight">
               Let the site do
               <span className="text-gold-400 italic"> the heavy lifting.</span>
             </h2>
@@ -425,7 +425,7 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
         <div className="relative max-w-5xl mx-auto">
           <div className="mb-20" data-animate="fade">
             <p className="text-[10px] tracking-[0.4em] uppercase text-gold-500/70 mb-4">For Pecan Pie Productions</p>
-            <h2 className="font-serif text-[clamp(1.6rem,4vw,2.8rem)] font-normal tracking-tight">
+            <h2 className="font-serif text-[clamp(1.6rem,4vw,2.8rem)] font-light tracking-tight">
               18 years of work.
               <span className="text-gold-400 italic"> Evolved.</span>
             </h2>
@@ -491,7 +491,7 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
 
           <div className="text-center mb-28" data-animate="fade">
             <p className="text-white/35 mb-5 font-light">Hosting savings are incidental.</p>
-            <p className="font-serif text-[clamp(1.3rem,3.5vw,2.2rem)] font-normal leading-[1.4]">
+            <p className="font-serif text-[clamp(1.3rem,3.5vw,2.2rem)] font-light leading-[1.4]">
               One new client closes the investment.
               <br />
               <span className="text-gold-400 italic">Everything after is margin.</span>
@@ -519,7 +519,7 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
                 <span className="text-white/35 tabular-nums">$37,500–$76,000</span>
               </div>
             </div>
-            <p className="font-serif text-xl md:text-2xl text-center text-gold-300/80 font-normal italic">
+            <p className="font-serif text-xl md:text-2xl text-center text-gold-300/80 font-light italic">
               This proposal is a fraction of that.
             </p>
           </div>
@@ -598,7 +598,7 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
           </div>
 
           <div className="text-center" data-animate="fade">
-            <h3 className="font-serif text-2xl md:text-3xl font-normal mb-10 tracking-tight">
+            <h3 className="font-serif text-2xl md:text-3xl font-light mb-10 tracking-tight">
               Let&apos;s begin.
             </h3>
             <div className="inline-block animate-[float_4s_ease-in-out_infinite]">
