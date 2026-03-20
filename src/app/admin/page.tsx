@@ -45,8 +45,8 @@ export default async function AdminPage() {
       <header className="border-b border-white/[0.04] bg-[#041c45]/60 backdrop-blur-xl sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Image src="/brand/MP26.svg" alt="Monday + Partners" width={32} height={32} className="opacity-90" />
-            <span className="text-[10px] tracking-[0.25em] uppercase text-white/30">Admin</span>
+            <Image src="/brand/MP26.svg" alt="Monday + Partners" width={44} height={44} className="brightness-0 invert opacity-90" />
+            <span className="text-[10px] tracking-[0.25em] uppercase text-white/40">Admin</span>
           </div>
           <div className="flex items-center gap-6">
             <span className="text-sm text-white/40 font-light">{user.email}</span>
@@ -77,18 +77,15 @@ export default async function AdminPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-white/[0.03] py-8 px-6 mt-auto">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
+      <footer className="py-16 px-6 mt-auto">
+        <div className="flex justify-center">
           <Image
             src="/brand/tagline_bug.svg"
             alt="Clarity. Conjunction. Currency."
-            width={200}
-            height={40}
-            className="opacity-40"
+            width={150}
+            height={150}
+            className="brightness-0 invert opacity-50"
           />
-          <p className="text-[10px] text-white/20 tracking-[0.15em] uppercase">
-            Monday + Partners
-          </p>
         </div>
       </footer>
     </div>
