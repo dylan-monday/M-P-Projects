@@ -249,7 +249,7 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
       <section id="problem" className="relative py-40 px-6">
         <div className="max-w-5xl mx-auto">
           <p className="text-[clamp(1.4rem,3.5vw,2.4rem)] font-extralight leading-[1.4] text-white/70 max-w-3xl" data-animate="fade">
-            Cinema advertising has the strongest attention metrics in all of advertising.
+            Cinema advertising commands attention like nothing else in the industry.
           </p>
 
           <div className="mt-28 grid md:grid-cols-3 gap-6" data-animate="stagger">
@@ -260,9 +260,9 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
 
           <div className="mt-36 text-center" data-animate="fade">
             <p className="text-[clamp(1.5rem,4vw,2.8rem)] font-extralight leading-[1.3] tracking-[-0.01em]">
-              The web has evolved.
+              The medium has evolved.
               <br />
-              <span className="text-gold-400 italic font-light">Your sites can too.</span>
+              <span className="text-gold-400 italic font-light">Your digital presence should match.</span>
             </p>
           </div>
 
@@ -293,28 +293,28 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
               <p className="text-[10px] tracking-[0.4em] uppercase text-gold-400/60 mb-6">Why this proposal</p>
 
               <p className="text-[clamp(1.1rem,2.5vw,1.4rem)] font-extralight leading-[1.6] text-white/70 mb-6">
-                We see real potential here.<br />
-                Your work in cinema advertising is proven — we believe the websites should reflect that quality and actively generate new business.
+                Your work speaks for itself.<br />
+                The websites should do the same.
               </p>
 
               <p className="text-base text-white/45 leading-relaxed font-light mb-6">
-                We&apos;re also using this as a test case for new AI-assisted development tools.<br />
-                It&apos;s how we can deliver this scope at a fraction of typical agency rates.
+                We&apos;re piloting a new AI-assisted development workflow.<br />
+                That&apos;s how we can deliver at this price point.
               </p>
 
               <div className="pt-6 border-t border-gold-400/10 flex flex-col md:flex-row gap-4 md:gap-10">
                 <div className="flex items-start gap-3">
                   <span className="text-gold-400/70 mt-1">✓</span>
                   <div>
-                    <p className="text-white/70 text-sm font-medium mb-1">You win</p>
-                    <p className="text-white/35 text-sm font-light">Premium quality at an exceptional price point</p>
+                    <p className="text-white/70 text-sm font-medium mb-1">For you</p>
+                    <p className="text-white/35 text-sm font-light">Top-tier execution at a fraction of typical cost</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <span className="text-gold-400/70 mt-1">✓</span>
                   <div>
-                    <p className="text-white/70 text-sm font-medium mb-1">We win</p>
-                    <p className="text-white/35 text-sm font-light">A real-world project to prove our new process</p>
+                    <p className="text-white/70 text-sm font-medium mb-1">For us</p>
+                    <p className="text-white/35 text-sm font-light">A live project to validate our new process</p>
                   </div>
                 </div>
               </div>
@@ -362,8 +362,8 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
           <div className="mb-20" data-animate="fade">
             <p className="text-[10px] tracking-[0.4em] uppercase text-gold-500/70 mb-4">For Looking Glass Media</p>
             <h2 className="text-[clamp(1.6rem,4vw,2.8rem)] font-extralight tracking-tight">
-              A sales machine that works
-              <span className="text-gold-400 italic"> while you sleep.</span>
+              Let the site do
+              <span className="text-gold-400 italic"> the heavy lifting.</span>
             </h2>
           </div>
 
@@ -371,44 +371,44 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
             <FeatureCard
               number="01"
               title="Interactive Stats Engine"
-              description="Makes the case for cinema advertising in 30 seconds. Animated counters. Shareable links. The tool your sales team will use every single day."
-              highlight="Converts skeptics into believers"
+              description="Makes the case for cinema advertising in 30 seconds. Animated counters. Shareable links. The tool your sales team reaches for daily."
+              highlight="Proof on demand"
             />
             <FeatureCard
               number="02"
               title="In-Theater Lead Capture"
-              description="Your preshow ad includes a QR code. Scan → Submit → Watch the movie. Stats kit lands in their inbox before the credits roll."
-              highlight="Live proof of concept in action"
+              description="Preshow QR code. Scan, submit, watch. Stats kit lands in their inbox before the credits roll."
+              highlight="Capture leads mid-experience"
             />
             <FeatureCard
               number="03"
               title="Text-to-Info Flow*"
-              description="Text BIGSCREEN to 55555. They text during the preshow. By the credits, everything they need is in their pocket."
-              highlight="Frictionless prospect capture"
+              description="Text BIGSCREEN to 55555. By the credits, everything they need is in their pocket."
+              highlight="Zero friction"
             />
             <FeatureCard
               number="04"
               title="Smart Ad Upload"
-              description="Already have an ad? Upload it instantly. Don't have one? Plain-English specs show exactly what we'll build. Zero back-and-forth."
-              highlight="Removes friction from onboarding"
+              description="Have an ad? Upload instantly. Need one? Plain-English specs show exactly what gets built."
+              highlight="Onboarding in minutes"
             />
             <FeatureCard
               number="05"
               title="Automated Nurture Sequences†"
               description="Every form, scan, and text triggers a smart email sequence. The right stat at the right moment. Built once, runs forever."
-              highlight="Future feature worth considering"
+              highlight="Future expansion ready"
             />
             <FeatureCard
               number="06"
               title="Downloadable Stats Kit"
-              description="A designed PDF with all the key cinema advertising stats — formatted for email, print, or presentation. Your sales team sends it with one click."
-              highlight="Shareable leave-behind collateral"
+              description="Designed PDF with every key stat. Email, print, or presentation ready. One click to send."
+              highlight="Leave-behind that closes"
             />
           </div>
 
           {/* Footnotes */}
           <div className="mt-10 text-[11px] text-white/30 font-light space-y-1" data-animate="fade">
-            <p>* SMS functionality uses pay-per-message service — typically $0.01–0.02/text, costs scale with usage.</p>
+            <p>* SMS functionality uses pay-per-message service, typically $0.01–0.02/text. Costs scale with usage.</p>
             <p>† Future feature not included in current scope, but infrastructure will support adding later.</p>
           </div>
         </div>
@@ -424,8 +424,8 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
           <div className="mb-20" data-animate="fade">
             <p className="text-[10px] tracking-[0.4em] uppercase text-gold-500/70 mb-4">For Pecan Pie Productions</p>
             <h2 className="text-[clamp(1.6rem,4vw,2.8rem)] font-extralight tracking-tight">
-              Show what you&apos;ve built.
-              <span className="text-gold-400 italic"> Close what you deserve.</span>
+              18 years of work.
+              <span className="text-gold-400 italic"> Finally visible.</span>
             </h2>
           </div>
 
@@ -433,26 +433,26 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
             <FeatureCard
               number="01"
               title="Cinematic Creative Showcase"
-              description="Thousands of ads produced. The new site shows them off beautifully. Organized by industry. Full-screen viewing experience."
-              highlight="Your work finally on display"
+              description="Thousands of ads produced. Organized by industry. Full-screen viewing. The work finally speaks for itself."
+              highlight="Portfolio that performs"
             />
             <FeatureCard
               number="02"
               title="Dual-Audience Routing"
-              description="Advertisers and theater operators see completely different sites. Same URL. Two perfectly tuned sales experiences."
-              highlight="One site, two perfect pitches"
+              description="Advertisers and theater operators see different sites. Same URL. Two distinct experiences, each optimized to convert."
+              highlight="Speak to both audiences"
             />
             <FeatureCard
               number="03"
               title="Theater Revenue Model"
-              description="Theater operators will finally understand exactly how the partnership works — and why saying yes is the obvious choice."
-              highlight="Objections answered before asked"
+              description="Theater operators see exactly how the partnership works. The economics make the decision obvious."
+              highlight="Objections preempted"
             />
             <FeatureCard
               number="04"
               title="Strategic Social Proof"
-              description="Penn Cinema. 18 years. Lucas Cinemas. Spotlight Theaters. 10+ years. Testimonials that build instant credibility."
-              highlight="Trust built at first glance"
+              description="Penn Cinema. 18 years. Lucas Cinemas. Spotlight Theaters. 10+ years. Longevity builds trust faster than any pitch."
+              highlight="Credibility at first glance"
             />
           </div>
         </div>
@@ -488,11 +488,11 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
           </div>
 
           <div className="text-center mb-28" data-animate="fade">
-            <p className="text-white/35 mb-5 font-light">But the real return isn&apos;t in hosting savings.</p>
+            <p className="text-white/35 mb-5 font-light">Hosting savings are incidental.</p>
             <p className="text-[clamp(1.3rem,3.5vw,2.2rem)] font-extralight leading-[1.4]">
-              Turn the sites into more powerful sales tools
+              One new client closes the investment.
               <br />
-              <span className="text-gold-400 italic font-light">and the entire project is paid in a quarter at most.</span>
+              <span className="text-gold-400 italic font-light">Everything after is margin.</span>
             </p>
           </div>
 
@@ -518,7 +518,7 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
               </div>
             </div>
             <p className="text-xl md:text-2xl text-center text-gold-300/80 font-extralight italic">
-              We&apos;re not proposing anything near these numbers.
+              This proposal is a fraction of that.
             </p>
           </div>
         </div>
@@ -553,7 +553,7 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
                 </div>
               ))}
             </div>
-            <p className="mt-5 text-[11px] text-white/25">* SMS uses pay-per-message service — typically $0.01–0.02/text</p>
+            <p className="mt-5 text-[11px] text-white/25">* SMS uses pay-per-message service, typically $0.01–0.02/text</p>
           </div>
 
           <div className="text-center mb-16" data-animate="fade">
@@ -597,7 +597,7 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
 
           <div className="text-center" data-animate="fade">
             <h3 className="text-2xl md:text-3xl font-extralight mb-10 tracking-tight">
-              Ready to start?
+              Let&apos;s begin.
             </h3>
             <div className="inline-block animate-[float_4s_ease-in-out_infinite]">
               <Button
@@ -606,7 +606,7 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
                 isLoading={isCheckoutLoading}
                 className="px-12 py-5 text-base bg-gradient-to-r from-gold-300 via-gold-400 to-gold-500 hover:from-gold-200 hover:via-gold-300 hover:to-gold-400 text-[#041c45] font-medium tracking-wide rounded-full shadow-[0_0_40px_rgba(212,168,67,0.4)] hover:shadow-[0_0_60px_rgba(212,168,67,0.6)] transition-all duration-500"
               >
-                Accept & Pay Deposit — {formatCurrency(project.deposit_amount || 0)}
+                Pay Deposit: {formatCurrency(project.deposit_amount || 0)}
               </Button>
             </div>
             <p className="mt-8 text-sm text-white/25 font-light">
@@ -628,7 +628,7 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
         <div className="max-w-4xl mx-auto flex flex-col items-center gap-8">
           <Image
             src="/brand/tagline_bug.svg"
-            alt="Clarity - Conjuring - Currency — Monday + Partners"
+            alt="Monday + Partners"
             width={80}
             height={80}
             className="brightness-0 invert opacity-75"
