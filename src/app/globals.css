@@ -222,6 +222,7 @@
   /* Fonts */
   --font-sans: var(--font-display);
   --font-mono: var(--font-mono);
+  --font-serif: var(--font-serif), Georgia, serif;
 }
 
 /* --------------------------------------------
