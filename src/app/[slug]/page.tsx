@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { ProposalView } from "./components/proposal-view";
 import { DashboardView } from "./components/dashboard-view";
 import type { Project, Client, Milestone, Note, Deliverable } from "@/types";
@@ -19,15 +19,17 @@ export type ProjectWithRelations = Project & {
 export default async function ProjectPage({ params, searchParams }: ProjectPageProps) {
   const { slug } = await params;
   const { payment } = await searchParams;
-  const supabase = await createClient();
 
-  // Get current user
+  // Use regular client for auth
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Fetch project with all relations
-  const { data: project, error } = await supabase
+  // Use admin client to fetch project (bypasses RLS)
+  // This allows public access to proposal pages
+  const adminSupabase = createAdminClient();
+  const { data: project, error } = await adminSupabase
     .from("projects")
     .select(`
       *,
