@@ -425,7 +425,7 @@ export function ProposalView({ project, paymentStatus, isAdmin }: ProposalViewPr
             <p className="text-[10px] tracking-[0.4em] uppercase text-gold-500/70 mb-4">For Pecan Pie Productions</p>
             <h2 className="text-[clamp(1.6rem,4vw,2.8rem)] font-extralight tracking-tight">
               18 years of work.
-              <span className="text-gold-400 italic"> Finally visible.</span>
+              <span className="text-gold-400 italic"> Evolved.</span>
             </h2>
           </div>
 
