@@ -1,7 +1,8 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { ProposalView } from "./components/proposal-view";
+import { ProposalViewV2 } from "./components/proposal-view-v2";
 import { DashboardView } from "./components/dashboard-view";
+import { isCustomProposal } from "@/lib/proposals";
 import type { Project, Client, Milestone, Note, Deliverable } from "@/types";
 
 interface ProjectPageProps {
@@ -19,6 +20,13 @@ export type ProjectWithRelations = Project & {
 export default async function ProjectPage({ params, searchParams }: ProjectPageProps) {
   const { slug } = await params;
   const { payment } = await searchParams;
+
+  // Projects with a custom-HTML proposal bundle live at
+  // /protected/p/{slug}/index.html. Bounce anyone landing here (stale link,
+  // manual URL guess) so the right auth-gated path serves the right experience.
+  if (isCustomProposal(slug)) {
+    redirect(`/protected/p/${slug}/index.html`);
+  }
 
   // Use regular client for auth
   const supabase = await createClient();
@@ -75,7 +83,7 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
 
   if (showProposal) {
     return (
-      <ProposalView
+      <ProposalViewV2
         project={typedProject}
         paymentStatus={payment}
         isAdmin={isAdmin}

@@ -1,0 +1,335 @@
+/* =========================================================================
+   MONDAY + PARTNERS — Colors & Type Foundations
+   Boutique creative strategy & services agency · New Orleans
+   ========================================================================= */
+
+/* ---- Webfonts (Google Fonts) -----------------------------------------------
+   NOTE: The brand lockup is Karla, wide-tracked, with the "+" vertically
+   centered against the caps. We use Karla for display / UI and Metro Sans
+   for body copy.
+   - Display + logo: Karla, tracked 0.24-0.32em
+   - UI labels, nav, eyebrows: Karla at normal tracking
+   - Body copy / running text: Metro Sans (variable, 300–700)
+   - Metadata: Karla with tabular-nums (no mono typeface)
+   - Editorial moments only: Fraunces for pull-quotes (sparingly)
+--------------------------------------------------------------------------- */
+@import url('https://fonts.googleapis.com/css2?family=Karla:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=Bpmf+Zihi+Kai+Std&display=swap');
+
+/* ---- Metro Sans (local variable TTF) -------------------------------------- */
+@font-face {
+  font-family: 'Metro Sans';
+  src: url('Metro-Sans-Variable-Regular.ttf') format('truetype');
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Metro Sans';
+  src: url('Metro-Sans-Variable-Italic-Regular.ttf') format('truetype');
+  font-weight: 300 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+:root {
+  /* ---------------------------------------------------------------------
+     COLOR — Base palette
+     The "chartreuse" is the hero accent (from MP26.png). Magenta and
+     leaf-green are secondary accents from the alt lockups. Neutrals are
+     a high-contrast near-black / paper-white system.
+     --------------------------------------------------------------------- */
+
+  /* Brand accents */
+  --mp-chartreuse:      #C9D92E;  /* hero — from primary lockup */
+  --mp-chartreuse-ink:  #9BAB10;  /* pressed / heading accent on light */
+  --mp-leaf:            #7BB841;  /* alt accent — from green lockup */
+  --mp-magenta:         #B52468;  /* alt accent — from red/pink lockup */
+  --mp-magenta-ink:     #8E1A51;  /* pressed accent */
+
+  /* Neutrals (paper ↔ ink) */
+  --mp-ink:             #111111;  /* near-black, body on paper */
+  --mp-ink-80:          #2B2B2B;
+  --mp-ink-60:          #555555;
+  --mp-ink-40:          #8A8A8A;
+  --mp-ink-20:          #C9C9C9;
+  --mp-ink-10:          #E6E6E6;
+  --mp-ink-05:          #F2F2F2;
+  --mp-paper:           #FAFAF7;  /* warm off-white */
+  --mp-paper-pure:      #FFFFFF;
+
+  /* Semantic state (derived from palette, used sparingly) */
+  --mp-success:         var(--mp-leaf);
+  --mp-danger:          var(--mp-magenta);
+  --mp-warning:         #E4A82B;
+  --mp-info:            #2F6BB7;
+
+  /* -----------------------------------------------------------
+     SEMANTIC COLOR TOKENS
+     Use these in components; never hardcode the raw values above.
+     ----------------------------------------------------------- */
+  --fg-1:        var(--mp-ink);        /* primary text */
+  --fg-2:        var(--mp-ink-60);     /* secondary text */
+  --fg-3:        var(--mp-ink-40);     /* tertiary / captions */
+  --fg-on-accent: var(--mp-paper-pure); /* text on chartreuse/magenta block */
+  --fg-inverted: var(--mp-paper);       /* text on ink bg */
+
+  --bg-1:        var(--mp-paper);       /* page background */
+  --bg-2:        var(--mp-paper-pure);  /* raised surface */
+  --bg-3:        var(--mp-ink-05);      /* sunken surface / fill */
+  --bg-accent:   var(--mp-chartreuse);
+  --bg-ink:      var(--mp-ink);
+
+  --border-1:    var(--mp-ink-10);
+  --border-2:    var(--mp-ink-20);
+  --border-strong: var(--mp-ink);
+
+  --link:        var(--mp-ink);
+  --link-hover:  var(--mp-chartreuse-ink);
+
+  /* -----------------------------------------------------------
+     TYPOGRAPHY — Font families
+     ----------------------------------------------------------- */
+  --font-display: 'Karla', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-body:    'Metro Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-accent:  'Karla', sans-serif;                       /* italic tagline voice */
+  --font-editorial:'Fraunces', 'Times New Roman', serif;     /* sparingly, for pull-quotes */
+  --font-mono:    'Karla', sans-serif;                        /* tabular-nums, not a mono */
+
+  /* tabular figure helper — apply to metadata blocks */
+  --tabular: "tnum" 1, "lnum" 1;
+
+  /* Type scale (1.25 minor third) */
+  --fs-12: 0.75rem;
+  --fs-14: 0.875rem;
+  --fs-16: 1rem;
+  --fs-18: 1.125rem;
+  --fs-20: 1.25rem;
+  --fs-24: 1.5rem;
+  --fs-32: 2rem;
+  --fs-40: 2.5rem;
+  --fs-56: 3.5rem;
+  --fs-80: 5rem;
+  --fs-112: 7rem;
+
+  /* Line heights */
+  --lh-tight:  1.05;
+  --lh-snug:   1.18;
+  --lh-normal: 1.45;
+  --lh-relaxed:1.6;
+
+  /* Tracking — hero/logo-style caps are dramatically tracked out */
+  --track-logo:   0.32em;   /* "MONDAY + PARTNERS" feel */
+  --track-caps:   0.16em;   /* section eyebrows */
+  --track-tight:  -0.02em;  /* display headlines */
+  --track-normal: 0;
+  --track-loose:  0.04em;
+
+  /* -----------------------------------------------------------
+     SPACING — 4pt base grid
+     ----------------------------------------------------------- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+  --sp-20: 80px;
+  --sp-24: 96px;
+  --sp-32: 128px;
+
+  /* -----------------------------------------------------------
+     RADII — restrained. The brand is rectilinear (the logo is a
+     hard block). Use 0 or 2px for most surfaces; pill for chips.
+     ----------------------------------------------------------- */
+  --radius-0: 0;
+  --radius-1: 2px;
+  --radius-2: 4px;
+  --radius-3: 8px;
+  --radius-pill: 999px;
+
+  /* -----------------------------------------------------------
+     SHADOWS — minimal. The brand relies on flat blocks + rule
+     lines more than elevation.
+     ----------------------------------------------------------- */
+  --shadow-hairline: 0 0 0 1px var(--border-1);
+  --shadow-1: 0 1px 0 var(--border-1);
+  --shadow-2: 0 4px 16px -6px rgba(17,17,17,0.10), 0 1px 2px rgba(17,17,17,0.04);
+  --shadow-3: 0 20px 48px -16px rgba(17,17,17,0.18), 0 2px 4px rgba(17,17,17,0.06);
+
+  /* -----------------------------------------------------------
+     MOTION
+     ----------------------------------------------------------- */
+  --dur-1: 120ms;   /* micro feedback */
+  --dur-2: 200ms;   /* hover/press */
+  --dur-3: 360ms;   /* card / panel */
+  --dur-4: 640ms;   /* page-level */
+  --ease-standard: cubic-bezier(0.2, 0.0, 0.0, 1.0);
+  --ease-out:      cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in:       cubic-bezier(0.7, 0, 0.84, 0);
+
+  /* Layout */
+  --container-max: 1280px;
+  --rule-weight: 1px;
+}
+
+/* =========================================================================
+   BASE RESET — minimal
+   ========================================================================= */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--font-body);
+  font-size: var(--fs-16);
+  line-height: var(--lh-normal);
+  color: var(--fg-1);
+  background: var(--bg-1);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* =========================================================================
+   SEMANTIC TYPE — ready-to-use classes
+   ========================================================================= */
+
+/* Eyebrows / micro-caps — the "tracked-out label" voice from the logo */
+.eyebrow, .mp-eyebrow {
+  font-family: var(--font-display);
+  font-size: var(--fs-12);
+  font-weight: 600;
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+
+/* Display — hero moments */
+h1, .h1, .mp-display {
+  font-family: var(--font-display);
+  font-size: clamp(var(--fs-56), 7vw, var(--fs-112));
+  font-weight: 700;
+  line-height: var(--lh-tight);
+  letter-spacing: var(--track-tight);
+  color: var(--fg-1);
+  margin: 0 0 var(--sp-6);
+  text-wrap: balance;
+}
+
+h2, .h2 {
+  font-family: var(--font-display);
+  font-size: clamp(var(--fs-32), 3.6vw, var(--fs-56));
+  font-weight: 700;
+  line-height: var(--lh-snug);
+  letter-spacing: var(--track-tight);
+  margin: 0 0 var(--sp-5);
+  text-wrap: balance;
+}
+
+h3, .h3 {
+  font-family: var(--font-display);
+  font-size: var(--fs-32);
+  font-weight: 600;
+  line-height: var(--lh-snug);
+  letter-spacing: -0.01em;
+  margin: 0 0 var(--sp-4);
+}
+
+h4, .h4 {
+  font-family: var(--font-display);
+  font-size: var(--fs-20);
+  font-weight: 600;
+  line-height: var(--lh-snug);
+  margin: 0 0 var(--sp-3);
+}
+
+h5, .h5 {
+  font-family: var(--font-display);
+  font-size: var(--fs-16);
+  font-weight: 600;
+  line-height: var(--lh-normal);
+  margin: 0 0 var(--sp-2);
+}
+
+/* Body copy */
+p, .body {
+  font-family: var(--font-body);
+  font-size: var(--fs-16);
+  line-height: var(--lh-relaxed);
+  color: var(--fg-1);
+  margin: 0 0 var(--sp-4);
+  text-wrap: pretty;
+}
+.body-lg { font-size: var(--fs-18); line-height: var(--lh-relaxed); }
+.body-sm { font-size: var(--fs-14); line-height: var(--lh-normal); color: var(--fg-2); }
+
+/* Tagline voice — italic tracked caps like "CLARITY — CONJURING — CURRENCY" */
+.mp-tagline {
+  font-family: var(--font-accent);
+  font-style: italic;
+  font-weight: 700;
+  font-size: var(--fs-20);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  color: var(--mp-chartreuse-ink);
+}
+
+/* Editorial serif — for pull-quotes in proposals */
+.mp-pullquote {
+  font-family: var(--font-editorial);
+  font-style: italic;
+  font-weight: 300;
+  font-size: var(--fs-32);
+  line-height: var(--lh-snug);
+  color: var(--fg-1);
+  text-wrap: balance;
+}
+
+/* Monospace role replaced by Karla + tabular-nums */
+code, .mono, .mp-mono {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: var(--tabular);
+  letter-spacing: 0;
+}
+
+/* Logo-style tracked caps — Karla wide-tracked, matches the lockup */
+.mp-logo-caps {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: var(--track-logo);
+  text-transform: uppercase;
+}
+
+/* Logo plus sign — vertically centered against caps, same weight */
+.mp-plus {
+  display: inline-block;
+  vertical-align: middle;
+  font-weight: 700;
+  line-height: 1;
+  margin: 0 0.08em;
+}
+
+/* Links */
+a {
+  color: var(--link);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: color var(--dur-2) var(--ease-standard);
+}
+a:hover { color: var(--link-hover); }
+
+/* Rule — a load-bearing motif in the brand */
+hr, .mp-rule {
+  border: 0;
+  border-top: var(--rule-weight) solid var(--border-strong);
+  margin: var(--sp-8) 0;
+}
+.mp-rule--hair { border-top-color: var(--border-1); }
+
+/* Selection */
+::selection { background: var(--mp-chartreuse); color: var(--mp-ink); }

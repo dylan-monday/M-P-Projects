@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { StatusBadge } from "@/components/ui";
 import { formatDate, formatCurrency } from "@/lib/utils";
+import { proposalHref } from "@/lib/proposals";
 import type { Project, Client } from "@/types";
 
 type ProjectWithClient = Project & { client: Client };
@@ -48,7 +49,7 @@ export function ProjectList({ projects }: { projects: ProjectWithClient[] }) {
       {projects.map((project) => (
         <Link
           key={project.id}
-          href={`/${project.slug}`}
+          href={proposalHref(project.slug)}
           onClick={() => playBell()}
           className="group block"
         >

@@ -28,9 +28,7 @@ export default function LoginPage() {
 
         {/* Help text */}
         <p className="text-center text-xs text-foreground-subtle">
-          You&apos;ll receive a link that logs you in instantly.
-          <br />
-          No password needed.
+          Clients receive a one-time login link by email.
         </p>
       </div>
     </div>
