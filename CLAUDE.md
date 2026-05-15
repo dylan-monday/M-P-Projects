@@ -2,14 +2,35 @@
 
 # Monday + Partners — Client Portal
 
+> **Before doing significant work on this portal:** read `docs/PORTAL_VISION.md`. It captures where this is going (agency-grade M+P brand portal serving the full client lifecycle), the gap between current state and target, and the phased rebuild plan. This CLAUDE.md is the operational reference for the code that exists today.
+
 ## Project Overview
 
 A client-facing proposal and project management portal for Monday + Partners (M+P), a design/development agency. The system handles the full client lifecycle: proposal → acceptance → project tracking → delivery.
 
-**Target**: $5k-$15k "fast-track/sprint" projects with AI-assisted workflows, ~4 week delivery.
+**Originally targeted**: $5k-$15k "fast-track/sprint" projects with AI-assisted workflows, ~4 week delivery.
+
+**Now also serving**: government-adjacent procurement engagements (LA.IO / Louisiana Innovation, $104.8k proposal). Standards have moved up.
 
 **Live URL**: https://projects.mondayandpartners.com
 **Test Project**: `/lgm-ppp` (Looking Glass Media / Pecan Pie Productions)
+**Active client engagement**: `/protected/p/la-startup-2026/index.html` (Louisiana Startup Report 2026, custom-HTML proposal, auth-gated)
+
+---
+
+## Recent additions (May 15, 2026)
+
+Major bridge build to host the LA.IO proposal under the portal's auth layer:
+
+- **Auth-gated custom-HTML proposals** under `/protected/p/{slug}/`. Static HTML lives in `public/protected/p/{slug}/`. Middleware enforces auth + per-project authorization (admin or matched client). Custom-HTML proposal slugs listed in `src/lib/proposals.ts`.
+- **Client area** at `/projects` lists all projects for the logged-in client with status badges (Proposal / Awaiting deposit / In progress / Approved). Admins redirect to `/admin`.
+- **Admin email+password auth.** `/login` detects emails ending in `@mondayandpartners.com` and switches from magic-link to password form. Set admin password via `npx tsx scripts/set-admin-password.ts 'your-password'`.
+- **Approval API** at `/api/projects/[slug]/approve`. Persists `approved_at`, `approver_name`, `approval_total` (cents), `year_1_support_included` to the projects table. Sends Resend email to `ADMIN_EMAIL` from `notifications@mondayandpartners.com` after successful write.
+- **Migration 002** (`scripts/migration-002-add-approval-fields.sql`) added approval columns to the projects table. Run in Supabase SQL Editor.
+- **Build bypass.** `next.config.ts` has `typescript.ignoreBuildErrors` and `eslint.ignoreDuringBuilds` set to true because Drafting Table components have pre-existing type errors that block production builds. Tech debt; see `bugs.md` and `docs/PORTAL_VISION.md`.
+- **Resend integration** for transactional admin emails. `RESEND_API_KEY` in `.env.local` and Vercel env. Optional `RESEND_FROM_EMAIL` defaults to `notifications@mondayandpartners.com`. `mondayandpartners.com` is verified in Resend.
+
+See `docs/PORTAL_VISION.md` for the rebuild plan that turns the bridge into a proper M+P brand portal.
 
 ## Tech Stack
 
@@ -59,26 +80,50 @@ A mid-century modern aesthetic brought to contemporary digital execution. Locate
 ## Key Files
 
 ### Routes
-- `/src/app/[slug]/page.tsx` — Dynamic project page (proposal or dashboard)
-- `/src/app/[slug]/components/proposal-view-v2.tsx` — New proposal design
-- `/src/app/[slug]/components/dashboard-view.tsx` — Post-acceptance project view
-- `/src/app/login/page.tsx` — Magic link authentication
+- `/src/app/[slug]/page.tsx` — Dynamic project page (proposal or dashboard). Redirects to `/protected/p/{slug}/index.html` for custom-HTML proposals.
+- `/src/app/[slug]/components/proposal-view-v2.tsx` — Drafting Table proposal view (used by non-custom proposals)
+- `/src/app/[slug]/components/dashboard-view.tsx` — Post-acceptance project view (Drafting Table)
+- `/src/app/(auth)/login/page.tsx` — Login page (magic link for clients, password for admin)
+- `/src/app/(auth)/login/login-form.tsx` — Form with admin-domain detection
+- `/src/app/projects/page.tsx` — Client area listing all of a user's projects
+- `/src/app/admin/page.tsx` — Admin dashboard listing all projects (Drafting Table)
+- `/src/app/api/projects/[slug]/approve/route.ts` — Approval API (Supabase write + Resend email)
+- `/src/app/api/auth/callback/route.ts` — Magic-link exchange (redirects to `/projects` by default)
+- `/src/app/api/stripe/checkout/route.ts` — Stripe checkout session creation
+- `/src/app/api/stripe/webhook/route.ts` — Stripe payment webhook
+- `/src/middleware.ts` — Auth + project authorization (gates `/admin/*` and `/protected/*`)
+
+### Custom-HTML proposals (the bridge)
+- `/public/protected/p/{slug}/` — Static HTML proposals served behind auth
+  - Currently: `la-startup-2026/` (Louisiana Startup Report 2026, M+P brand voice)
+- `/src/lib/proposals.ts` — `CUSTOM_PROPOSAL_SLUGS` set + `proposalHref(slug)` helper
 
 ### Configuration
 - `/src/app/layout.tsx` — Root layout with font loading
 - `/src/app/globals.css` — Tailwind imports + design tokens
 - `/src/styles/design-system.css` — Drafting Table tokens (colors, spacing)
+- `/next.config.ts` — Turbopack root pin + TS/ESLint build bypass (tech debt)
+- `/src/components/layout/logo.tsx` — Logo component with `sm/md/lg/xl/2xl` sizes
 
 ### Database
-- `/scripts/seed.ts` — Creates test project with Stripe products
-- `/supabase/` — Schema and migrations
+- `/scripts/seed.ts` — Creates LGM/PPP test project with Stripe products
+- `/scripts/seed-la-startup.ts` — Creates LA.IO client (Madeline Kawanaka) and project record
+- `/scripts/set-admin-password.ts` — Sets admin password via Supabase admin API (run once)
+- `/scripts/schema.sql` — Original schema (clients, projects, milestones, deliverables, notes + RLS)
+- `/scripts/migration-001-add-paid-flags.sql` — Adds `deposit_paid`/`final_paid` booleans
+- `/scripts/migration-002-add-approval-fields.sql` — Adds `approved_at`, `approver_name`, `approval_total`, `year_1_support_included`
 
 ## How It Works
 
 ### URL Lifecycle
+
+There are two flows depending on whether a project has a custom-HTML proposal.
+
+**Standard projects** (no entry in `CUSTOM_PROPOSAL_SLUGS`):
+
 1. **Proposal** (`status: "proposal"`, `deposit_paid: false`)
-   - Publicly accessible, no login required
-   - Shows ProposalViewV2 with full pitch
+   - Public via `/[slug]` (no login required for proposal state)
+   - Shows ProposalViewV2 (Drafting Table)
    - CTA triggers Stripe checkout for deposit
 
 2. **Active Project** (`deposit_paid: true`)
@@ -89,10 +134,18 @@ A mid-century modern aesthetic brought to contemporary digital execution. Locate
 3. **Complete** (`status: "complete"`)
    - Archive/reference view
 
+**Custom-HTML proposals** (e.g. LA.IO):
+
+1. **Auth required at all times.** `/protected/p/{slug}/index.html` is gated by middleware. `/{slug}` redirects to the protected path.
+2. **Sign-in flow.** Client visits `/login`, enters email, gets magic link, lands on `/projects` (client area).
+3. **Approval.** From `/projects`, client clicks the project, views the proposal, clicks Approve in the modal. POSTs to `/api/projects/[slug]/approve` which writes to Supabase (`status: "awaiting_deposit"`, approval fields populated) and sends Resend email to admin.
+4. **Post-approval.** Client area shows the project with "Approved" badge. Proposal stays viewable.
+
 ### Authentication
-- Magic link via Supabase Auth
-- Admin: `ADMIN_EMAIL` env var
-- Client: Matched by `project.client.email`
+
+- **Clients:** magic link via Supabase Auth. Sent from Supabase's domain currently (tech debt — should use custom SMTP via Resend).
+- **Admin:** email + password via `supabase.auth.signInWithPassword`. Set via `scripts/set-admin-password.ts`. `/login` detects `@mondayandpartners.com` emails and shows password field.
+- **Authorization:** middleware enforces admin-only access to `/admin/*`. For `/protected/p/{slug}/*`, middleware verifies the user is either `ADMIN_EMAIL` or the client tied to that project (per Supabase RLS).
 
 ### Payments
 - Stripe Checkout (redirect flow)
@@ -150,14 +203,24 @@ STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
 NEXT_PUBLIC_APP_URL=
 ADMIN_EMAIL=
+RESEND_API_KEY=
+RESEND_FROM_EMAIL=       # optional; defaults to notifications@mondayandpartners.com
 ```
+
+All of these must also be set in Vercel project settings → Environment Variables for production builds.
 
 ## Commands
 
 ```bash
-npm run dev          # Start dev server
-npx tsx scripts/seed.ts   # Seed test project (run once)
+npm run dev                                       # Start dev server
+npx tsx scripts/seed.ts                           # Seed LGM/PPP test project
+npx tsx scripts/seed-la-startup.ts                # Seed LA.IO client + project
+npx tsx scripts/set-admin-password.ts 'pwd'       # Set admin password (single-quote to escape !)
 ```
+
+## Multi-account GitHub note
+
+This repo is on GitHub at `dylan-monday/M-P-Projects`. Dylan also has other GitHub accounts (e.g. `dylan-natrx`). Before pushing, confirm the credentials git uses are for `dylan-monday`. If push fails with 403, clear macOS Keychain entries for `github.com` and re-authenticate with a personal access token tied to `dylan-monday`.
 
 ## Font Setup
 
