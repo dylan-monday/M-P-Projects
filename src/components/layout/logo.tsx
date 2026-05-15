@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 interface LogoProps {
   className?: string;
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "sm" | "md" | "lg" | "xl" | "2xl";
   href?: string;
   showText?: boolean;
 }
@@ -16,6 +16,7 @@ const sizeMap = {
   md: { width: 40, height: 40 },
   lg: { width: 56, height: 56 },
   xl: { width: 112, height: 112 },
+  "2xl": { width: 280, height: 280 },
 };
 
 export function Logo({

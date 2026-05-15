@@ -8,7 +8,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm space-y-8">
         {/* Logo */}
         <div className="flex justify-center">
-          <Logo size="xl" href={undefined} />
+          <Logo size="2xl" href={undefined} />
         </div>
 
         {/* Title */}
