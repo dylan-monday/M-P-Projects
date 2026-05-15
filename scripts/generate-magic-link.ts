@@ -84,7 +84,11 @@ async function main() {
 
   const appUrl =
     process.env.NEXT_PUBLIC_APP_URL || "https://projects.mondayandpartners.com";
-  const redirectTo = `${appUrl}/api/auth/callback?redirect=/projects`;
+  // Points at the client-side /auth/callback page which handles both PKCE
+  // code flow (?code=) and legacy hash flow (#access_token=). admin.generateLink
+  // emits the latter, so the server-side /api/auth/callback route can't
+  // process it on its own.
+  const redirectTo = `${appUrl}/auth/callback?next=/projects`;
 
   const { data, error } = await supabase.auth.admin.generateLink({
     type: "magiclink",
