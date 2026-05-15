@@ -39,7 +39,7 @@ export default async function ProjectsPage() {
     <div className="min-h-screen px-6 py-12">
       <div className="max-w-3xl mx-auto space-y-10">
         <header className="flex items-center justify-between">
-          <Logo size="md" href="/projects" />
+          <Logo size="xl" href="/projects" />
           <form action="/api/auth/logout" method="POST">
             <button
               type="submit"
