@@ -1150,7 +1150,9 @@
     }));
 
     persistApproval(name, total);
-    sendNotification(name);
+    // Formspree notification removed; the /approve API now sends the admin
+    // email via Resend after the Supabase write succeeds. See the API route
+    // at src/app/api/projects/[slug]/approve/route.ts.
     closeModal();
     setTimeout(runApproveAnimation, 120);
   }
