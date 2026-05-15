@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local working / scratch folders (underscore-prefixed)
+/_lgm-ppp project/
+/_source/
+
+# claude / agent artifacts
+/.claude/
