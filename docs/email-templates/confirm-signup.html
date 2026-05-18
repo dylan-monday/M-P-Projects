@@ -6,11 +6,11 @@
 
   This template is what new users see the first time they sign in if their
   email doesn't yet have an auth.users record. (Returning users get the
-  Magic Link template instead.) Branding both keeps the welcome consistent
-  with the rest of the portal.
+  Magic Link template instead.)
 
   Supabase template variables used:
-    {{ .ConfirmationURL }}   Single-use confirm-and-sign-in URL
+    {{ .Token }}             6-digit confirmation code (primary path)
+    {{ .ConfirmationURL }}   Single-use confirm-and-sign-in URL (fallback)
     {{ .SiteURL }}           The configured Site URL
 
   Subject (Supabase has a separate field):
@@ -34,25 +34,32 @@
             <td style="height:4px; background:#C9D92E; line-height:1px; font-size:1px;">&nbsp;</td>
           </tr>
 
-          <!-- Logo -->
-          <tr>
-            <td style="padding:32px 0 28px;">
-              <img src="https://projects.mondayandpartners.com/favicon.png" alt="Monday + Partners" width="56" height="56" style="display:block; border:0; outline:none; text-decoration:none;">
-            </td>
-          </tr>
-
           <!-- Eyebrow + headline -->
           <tr>
             <td style="padding:0 0 24px;">
-              <p style="margin:0 0 12px; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; color:#555555;">Monday + Partners · Welcome</p>
+              <p style="margin:12px 0; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; color:#555555;">Monday + Partners · Welcome</p>
               <h1 style="margin:0; font-size:26px; font-weight:500; line-height:1.25; color:#111111;">Confirm your sign-in</h1>
             </td>
           </tr>
 
           <!-- Body -->
           <tr>
-            <td style="padding:0 0 32px; font-size:16px; line-height:1.6; color:#333333;">
-              <p style="margin:0 0 16px;">Welcome. Click below to confirm your email and access the Monday + Partners client portal. The link is single-use and valid for one hour.</p>
+            <td style="padding:0 0 24px; font-size:16px; line-height:1.6; color:#333333;">
+              <p style="margin:0;">Welcome. Enter the code below on the sign-in page to access the Monday + Partners client portal. The code is valid for one hour.</p>
+            </td>
+          </tr>
+
+          <!-- Code block -->
+          <tr>
+            <td style="padding:0 0 32px;">
+              <div style="font-family:'SF Mono', Menlo, Consolas, 'Courier New', monospace; font-size:34px; letter-spacing:0.32em; color:#111111; background:#FFFFFF; border:1px solid #E5E2D8; padding:18px 24px; display:inline-block; font-weight:500;">{{ .Token }}</div>
+            </td>
+          </tr>
+
+          <!-- Link fallback intro -->
+          <tr>
+            <td style="padding:0 0 32px; font-size:14px; line-height:1.6; color:#666666;">
+              <p style="margin:0;">Prefer a one-click confirm? Use the button below instead.</p>
             </td>
           </tr>
 
@@ -62,18 +69,10 @@
               <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                 <tr>
                   <td style="background:#111111;">
-                    <a href="{{ .ConfirmationURL }}" style="display:inline-block; padding:16px 32px; color:#FAFAF7; text-decoration:none; font-size:13px; letter-spacing:0.18em; text-transform:uppercase; font-weight:500;">Confirm and sign in</a>
+                    <a href="{{ .ConfirmationURL }}" style="display:inline-block; padding:14px 26px; color:#FAFAF7; text-decoration:none; font-size:12px; letter-spacing:0.18em; text-transform:uppercase; font-weight:500;">Confirm instead</a>
                   </td>
                 </tr>
               </table>
-            </td>
-          </tr>
-
-          <!-- Fallback URL -->
-          <tr>
-            <td style="padding:0 0 32px; font-size:13px; line-height:1.6; color:#666666;">
-              <p style="margin:0 0 6px;">If the button doesn't work, paste this URL into your browser:</p>
-              <p style="margin:0; word-break:break-all;"><a href="{{ .ConfirmationURL }}" style="color:#9BAB10; text-decoration:underline;">{{ .ConfirmationURL }}</a></p>
             </td>
           </tr>
 

@@ -1,12 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button, Input } from "@/components/ui";
 
+/**
+ * /login form.
+ *
+ * Two auth paths:
+ *
+ *   - Admin (emails ending in @mondayandpartners.com): email + password.
+ *     One step, signInWithPassword, redirect on success.
+ *
+ *   - Everyone else: 6-digit OTP code emailed via Supabase Magic Link
+ *     template. UI is a two-step state machine:
+ *       1. "email" — collect the email, fire signInWithOtp, switch to "code"
+ *       2. "code"  — collect the 6-digit code, verifyOtp, redirect on success
+ *
+ *     The clickable link in the email still works (handled by /auth/callback)
+ *     but the code path is the primary, bulletproof flow. Email security
+ *     scanners (Gmail, M365 Defender, gov mail systems) cannot consume a
+ *     code the way they can pre-fetch and burn a clickable link.
+ */
+
 // Admin domain — emails ending in this trigger password auth.
-// Magic link is used for every other email.
+// Magic link (OTP code) is used for every other email.
 const ADMIN_DOMAIN = "@mondayandpartners.com";
 
 // Human-readable copy for the few error tokens we redirect with from the
@@ -14,8 +33,10 @@ const ADMIN_DOMAIN = "@mondayandpartners.com";
 // still surfaced rather than swallowed.
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
   auth_failed:
-    "That link couldn't be used. It may have expired or already been opened. Request a new one below.",
+    "That link couldn't be used. It may have expired or already been opened. Request a new code below.",
 };
+
+type Step = "email" | "code";
 
 export function LoginForm() {
   const searchParams = useSearchParams();
@@ -26,18 +47,25 @@ export function LoginForm() {
     ? AUTH_ERROR_MESSAGES[incomingErrorToken] || incomingErrorToken
     : null;
 
+  const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<
     { type: "success" | "error"; text: string } | null
-  >(
-    incomingError ? { type: "error", text: incomingError } : null
-  );
+  >(incomingError ? { type: "error", text: incomingError } : null);
+
+  const codeInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (step === "code") {
+      codeInputRef.current?.focus();
+    }
+  }, [step]);
 
   const isAdminEmail = email.toLowerCase().endsWith(ADMIN_DOMAIN);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  async function sendCode(e: React.FormEvent) {
     e.preventDefault();
     setIsLoading(true);
     setMessage(null);
@@ -49,53 +77,145 @@ export function LoginForm() {
         email,
         password,
       });
-
       setIsLoading(false);
-
       if (error) {
         setMessage({
           type: "error",
           text: error.message || "Invalid email or password.",
         });
       } else {
-        // Middleware will resolve the destination on next navigation.
         window.location.href = redirectTo;
       }
-    } else {
-      // IMPORTANT: route the magic link through the CLIENT-side /auth/callback
-      // page, not the server-side /api/auth/callback. Email security scanners
-      // (Gmail, M365 Defender, etc.) pre-fetch links to scan them. The server
-      // route would attempt the PKCE exchange on that scanner hit — without
-      // a code_verifier cookie it fails, and Supabase may treat the token as
-      // consumed, breaking the real click. The client page only runs the
-      // exchange when JS executes in the user's actual browser, so scanners
-      // can't burn the token before the user gets there.
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirectTo)}`,
-        },
-      });
-
-      setIsLoading(false);
-
-      if (error) {
-        setMessage({
-          type: "error",
-          text: error.message || "Something went wrong. Please try again.",
-        });
-      } else {
-        setMessage({
-          type: "success",
-          text: "Check your email for a login link.",
-        });
-      }
+      return;
     }
-  };
+
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        // The clickable-link path still works via /auth/callback for inboxes
+        // that don't aggressively pre-fetch. Most users will paste the code
+        // into the next step of this form instead.
+        emailRedirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirectTo)}`,
+      },
+    });
+
+    setIsLoading(false);
+    if (error) {
+      setMessage({
+        type: "error",
+        text:
+          error.message ||
+          "Couldn't send your code. Please try again in a moment.",
+      });
+      return;
+    }
+
+    setStep("code");
+    setMessage({
+      type: "success",
+      text: "Check your inbox. Enter the 6-digit code below.",
+    });
+  }
+
+  async function verifyCode(e: React.FormEvent) {
+    e.preventDefault();
+    setIsLoading(true);
+    setMessage(null);
+
+    const supabase = createClient();
+    const cleaned = code.replace(/\D/g, "").slice(0, 6);
+
+    if (cleaned.length !== 6) {
+      setIsLoading(false);
+      setMessage({
+        type: "error",
+        text: "The code is 6 digits. Check your email and try again.",
+      });
+      return;
+    }
+
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token: cleaned,
+      type: "email",
+    });
+
+    setIsLoading(false);
+    if (error) {
+      setMessage({
+        type: "error",
+        text:
+          error.message ||
+          "That code didn't work. Double-check the latest email or request a new code.",
+      });
+      return;
+    }
+
+    window.location.href = redirectTo;
+  }
+
+  function backToEmail() {
+    setStep("email");
+    setCode("");
+    setMessage(null);
+  }
+
+  if (step === "code") {
+    return (
+      <>
+        <form onSubmit={verifyCode} className="space-y-4">
+          <div className="space-y-1">
+            <p className="text-sm text-foreground-muted">
+              We sent a 6-digit code to <strong>{email}</strong>.
+            </p>
+          </div>
+
+          <Input
+            ref={codeInputRef}
+            type="text"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            placeholder="123456"
+            value={code}
+            onChange={(e) =>
+              setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+            }
+            required
+            maxLength={6}
+            className="text-center tracking-[0.4em] font-mono"
+          />
+
+          <Button type="submit" className="w-full" isLoading={isLoading}>
+            Sign in
+          </Button>
+
+          <button
+            type="button"
+            onClick={backToEmail}
+            className="w-full text-xs text-foreground-muted hover:text-foreground underline-offset-2 hover:underline"
+          >
+            Use a different email
+          </button>
+        </form>
+
+        {message && (
+          <div
+            className={`p-4 rounded-md text-sm ${
+              message.type === "success"
+                ? "bg-success/10 text-success border border-success/20"
+                : "bg-error/10 text-error border border-error/20"
+            }`}
+          >
+            {message.text}
+          </div>
+        )}
+      </>
+    );
+  }
 
   return (
     <>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={sendCode} className="space-y-4">
         <Input
           type="email"
           placeholder="you@company.com"
@@ -118,7 +238,7 @@ export function LoginForm() {
         )}
 
         <Button type="submit" className="w-full" isLoading={isLoading}>
-          {isAdminEmail ? "Sign in" : "Send Login Link"}
+          {isAdminEmail ? "Sign in" : "Send sign-in code"}
         </Button>
       </form>
 

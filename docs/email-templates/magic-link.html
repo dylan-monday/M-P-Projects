@@ -16,21 +16,27 @@
           </tr>
 
           <tr>
-            <td style="padding:32px 0 28px;">
-              <img src="https://projects.mondayandpartners.com/favicon.png" alt="Monday + Partners" width="56" height="56" style="display:block; border:0; outline:none; text-decoration:none;">
-            </td>
-          </tr>
-
-          <tr>
             <td style="padding:0 0 24px;">
-              <p style="margin:0 0 12px; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; color:#555555;">Monday + Partners · Client Portal</p>
+              <p style="margin:12px 0; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; color:#555555;">Monday + Partners · Client Portal</p>
               <h1 style="margin:0; font-size:26px; font-weight:500; line-height:1.25; color:#111111;">Sign in to your proposal</h1>
             </td>
           </tr>
 
           <tr>
-            <td style="padding:0 0 32px; font-size:16px; line-height:1.6; color:#333333;">
-              <p style="margin:0;">Click the button below to sign in to your client portal. The link is single-use and valid for one hour.</p>
+            <td style="padding:0 0 24px; font-size:16px; line-height:1.6; color:#333333;">
+              <p style="margin:0;">Enter the code below on the sign-in page to access your portal. The code is valid for one hour.</p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:0 0 32px;">
+              <div style="font-family:'SF Mono', Menlo, Consolas, 'Courier New', monospace; font-size:34px; letter-spacing:0.32em; color:#111111; background:#FFFFFF; border:1px solid #E5E2D8; padding:18px 24px; display:inline-block; font-weight:500;">{{ .Token }}</div>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:0 0 32px; font-size:14px; line-height:1.6; color:#666666;">
+              <p style="margin:0;">Prefer a one-click sign-in? Use the button below instead.</p>
             </td>
           </tr>
 
@@ -39,17 +45,10 @@
               <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                 <tr>
                   <td style="background:#111111;">
-                    <a href="{{ .ConfirmationURL }}" style="display:inline-block; padding:16px 32px; color:#FAFAF7; text-decoration:none; font-size:13px; letter-spacing:0.18em; text-transform:uppercase; font-weight:500;">Sign in</a>
+                    <a href="{{ .ConfirmationURL }}" style="display:inline-block; padding:14px 26px; color:#FAFAF7; text-decoration:none; font-size:12px; letter-spacing:0.18em; text-transform:uppercase; font-weight:500;">Sign in instead</a>
                   </td>
                 </tr>
               </table>
-            </td>
-          </tr>
-
-          <tr>
-            <td style="padding:0 0 32px; font-size:13px; line-height:1.6; color:#666666;">
-              <p style="margin:0 0 6px;">If the button doesn't work, paste this URL into your browser:</p>
-              <p style="margin:0; word-break:break-all;"><a href="{{ .ConfirmationURL }}" style="color:#9BAB10; text-decoration:underline;">{{ .ConfirmationURL }}</a></p>
             </td>
           </tr>
 
