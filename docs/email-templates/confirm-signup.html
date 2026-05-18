@@ -1,33 +1,27 @@
 <!--
-  M+P magic link email template — paper light.
+  M+P confirm-signup email template — paper light.
 
-  Paste the body content (everything inside <body>) into:
-  Supabase Dashboard → Authentication → Email Templates → Magic Link
+  Paste the body content into:
+  Supabase Dashboard → Authentication → Email Templates → Confirm Signup
+
+  This template is what new users see the first time they sign in if their
+  email doesn't yet have an auth.users record. (Returning users get the
+  Magic Link template instead.) Branding both keeps the welcome consistent
+  with the rest of the portal.
 
   Supabase template variables used:
-    {{ .ConfirmationURL }}   The single-use sign-in URL
-    {{ .Email }}             The recipient's email (optional, currently unused)
-    {{ .SiteURL }}           The configured Site URL (currently unused; could
-                             be used to label the portal in the footer)
+    {{ .ConfirmationURL }}   Single-use confirm-and-sign-in URL
+    {{ .SiteURL }}           The configured Site URL
 
   Subject (Supabase has a separate field):
-    Sign in to your Monday + Partners portal
-
-  Notes on rendering:
-    - All CSS inline (no <style> blocks) for maximum email-client compatibility
-    - Fonts use system stacks; we don't load custom web fonts because Outlook
-      and Gmail clients strip them anyway. Brand recognition comes from
-      color, layout, and the M+P + mark image.
-    - Width capped at 560px for readability on desktop; fluid on mobile
-    - Logo is hosted at projects.mondayandpartners.com/brand/MP26.png so it
-      loads from a trusted M+P domain
+    Welcome to Monday + Partners — confirm your sign-in
 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign in to Monday + Partners</title>
+  <title>Welcome to Monday + Partners</title>
 </head>
 <body style="margin:0; padding:0; background:#FAFAF7; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; color:#111111; -webkit-font-smoothing:antialiased;">
   <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#FAFAF7;">
@@ -50,15 +44,15 @@
           <!-- Eyebrow + headline -->
           <tr>
             <td style="padding:0 0 24px;">
-              <p style="margin:0 0 12px; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; color:#555555;">Monday + Partners · Client Portal</p>
-              <h1 style="margin:0; font-size:26px; font-weight:500; line-height:1.25; color:#111111;">Sign in to your proposal</h1>
+              <p style="margin:0 0 12px; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; color:#555555;">Monday + Partners · Welcome</p>
+              <h1 style="margin:0; font-size:26px; font-weight:500; line-height:1.25; color:#111111;">Confirm your sign-in</h1>
             </td>
           </tr>
 
           <!-- Body -->
           <tr>
             <td style="padding:0 0 32px; font-size:16px; line-height:1.6; color:#333333;">
-              <p style="margin:0;">Click the button below to sign in to your client portal. The link is single-use and valid for one hour.</p>
+              <p style="margin:0 0 16px;">Welcome. Click below to confirm your email and access the Monday + Partners client portal. The link is single-use and valid for one hour.</p>
             </td>
           </tr>
 
@@ -68,7 +62,7 @@
               <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                 <tr>
                   <td style="background:#111111;">
-                    <a href="{{ .ConfirmationURL }}" style="display:inline-block; padding:16px 32px; color:#FAFAF7; text-decoration:none; font-size:13px; letter-spacing:0.18em; text-transform:uppercase; font-weight:500;">Sign in</a>
+                    <a href="{{ .ConfirmationURL }}" style="display:inline-block; padding:16px 32px; color:#FAFAF7; text-decoration:none; font-size:13px; letter-spacing:0.18em; text-transform:uppercase; font-weight:500;">Confirm and sign in</a>
                   </td>
                 </tr>
               </table>
@@ -86,7 +80,7 @@
           <!-- Divider -->
           <tr>
             <td style="border-top:1px solid #E5E2D8; padding-top:24px;">
-              <p style="margin:0; font-size:13px; line-height:1.6; color:#888888;">Didn't request this? You can safely ignore this email.</p>
+              <p style="margin:0; font-size:13px; line-height:1.6; color:#888888;">Didn't expect this email? You can safely ignore it. We won't email you again.</p>
             </td>
           </tr>
 

@@ -3,16 +3,22 @@ import { Resend } from "resend";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 
 /**
- * Persist proposal approval to Supabase and send admin notification email.
+ * Persist proposal approval to Supabase and send branded emails.
  *
- * The proposal HTML posts here when a client clicks Approve in the modal.
- * Auth is enforced via the user's Supabase session; only the matched client
- * or the admin can mark a project approved. Writes use the admin client to
- * bypass RLS (since clients have read-only RLS access to projects).
+ * On a successful DB write we fire two emails via Resend:
  *
- * After a successful DB write, sends an email via Resend to ADMIN_EMAIL.
- * Email failure is logged but does not fail the request — approval is
- * already recorded in the database (the authoritative source).
+ *   1. Admin notification → ADMIN_EMAIL (Dylan).
+ *      Subject: "Proposal approved: {project title}"
+ *      Body: M+P paper-light, summarizes who approved, total, support choice,
+ *      timestamp, link back to the proposal.
+ *
+ *   2. Client confirmation → the approving client's email.
+ *      Subject: "Your Monday + Partners proposal — approval confirmed"
+ *      Body: M+P paper-light, confirms what they approved, reassures about
+ *      next steps, provides Dylan's direct contact.
+ *
+ * Email failures are logged but never fail the request. Approval is
+ * authoritative in Supabase regardless.
  *
  * Body shape:
  *   {
@@ -31,13 +37,83 @@ function fmtDollarsFromCents(cents: number | null | undefined): string {
   if (typeof cents !== "number") return "—";
   return "$" + (cents / 100).toLocaleString("en-US");
 }
+
+/**
+ * M+P paper-light email shell. Wraps an inner content fragment in the
+ * brand-consistent layout used across all portal emails. The shell mirrors
+ * the magic-link template at docs/email-templates/magic-link.html so every
+ * email the client sees feels like the same family.
+ */
+function brandedEmailShell({
+  preheader,
+  eyebrow,
+  headline,
+  body,
+}: {
+  preheader: string;
+  eyebrow: string;
+  headline: string;
+  body: string;
+}): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${escapeHtml(headline)}</title>
+</head>
+<body style="margin:0; padding:0; background:#FAFAF7; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; color:#111111; -webkit-font-smoothing:antialiased;">
+  <div style="display:none; max-height:0; overflow:hidden; visibility:hidden; mso-hide:all;">${escapeHtml(preheader)}</div>
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#FAFAF7;">
+    <tr>
+      <td align="center" style="padding:40px 20px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:560px; margin:0 auto; background:#FAFAF7;">
+          <tr><td style="height:4px; background:#C9D92E; line-height:1px; font-size:1px;">&nbsp;</td></tr>
+          <tr>
+            <td style="padding:32px 0 28px;">
+              <img src="${APP_URL}/brand/MP26.png" alt="Monday + Partners" width="56" height="56" style="display:block; border:0; outline:none; text-decoration:none;">
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 0 24px;">
+              <p style="margin:0 0 12px; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; color:#555555;">${escapeHtml(eyebrow)}</p>
+              <h1 style="margin:0; font-size:26px; font-weight:500; line-height:1.25; color:#111111;">${escapeHtml(headline)}</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 0 32px; font-size:16px; line-height:1.6; color:#333333;">
+              ${body}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding-top:24px; border-top:1px solid #E5E2D8;">
+              <p style="margin:0 0 4px; font-size:10px; letter-spacing:0.25em; text-transform:uppercase; color:#555555;">Clarity · Conjuring · Currency</p>
+              <p style="margin:6px 0 0; font-size:11px; color:#888888;">Monday + Partners · New Orleans</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
 
-  // Session-bound client to identify the caller
   const supabase = await createClient();
   const {
     data: { user },
@@ -67,7 +143,6 @@ export async function POST(
     );
   }
 
-  // Admin client bypasses RLS for the authorization lookup + the write
   const adminSupabase = createAdminClient();
   const { data: project, error: projectError } = await adminSupabase
     .from("projects")
@@ -115,42 +190,125 @@ export async function POST(
     return NextResponse.json({ error: updateError.message }, { status: 500 });
   }
 
-  // Send admin notification via Resend (best-effort, never blocks the response).
-  if (process.env.RESEND_API_KEY && adminEmail) {
-    try {
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      const proposalUrl = `${APP_URL}/protected/p/${project.slug}/index.html`;
-      await resend.emails.send({
-        from: RESEND_FROM,
-        to: adminEmail,
-        subject: `Proposal approved: ${project.title}`,
-        html: `
-          <h2 style="font-family:system-ui;font-size:18px;margin:0 0 16px;">${project.title}</h2>
-          <p style="font-family:system-ui;font-size:14px;line-height:1.5;color:#333;">
-            <strong>${approver_name}</strong>${clientName ? ` (${clientName})` : ""} just approved the proposal.
-          </p>
-          <table style="font-family:system-ui;font-size:14px;line-height:1.7;border-collapse:collapse;margin:16px 0;">
-            <tr><td style="padding-right:24px;color:#666;">Total approved</td><td><strong>${fmtDollarsFromCents(totalCents)}</strong></td></tr>
-            <tr><td style="padding-right:24px;color:#666;">Year 1 Support</td><td>${supportIncluded ? "Included" : "Declined"}</td></tr>
-            <tr><td style="padding-right:24px;color:#666;">Approved at</td><td>${new Date(approvedAt).toUTCString()}</td></tr>
-            ${clientEmail ? `<tr><td style="padding-right:24px;color:#666;">Client email</td><td>${clientEmail}</td></tr>` : ""}
+  // Send both notification emails. Failures are logged, not fatal.
+  if (process.env.RESEND_API_KEY) {
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const proposalUrl = `${APP_URL}/protected/p/${project.slug}/index.html`;
+    const approvedAtLabel = new Date(approvedAt).toLocaleString("en-US", {
+      dateStyle: "long",
+      timeStyle: "short",
+      timeZone: "America/Chicago",
+    });
+    const totalLabel = fmtDollarsFromCents(totalCents);
+    const supportLabel = supportIncluded ? "Included" : "Declined";
+
+    // 1) Admin notification
+    if (adminEmail) {
+      try {
+        const adminBody = `
+          <p style="margin:0 0 16px;"><strong>${escapeHtml(approver_name)}</strong>${clientName ? ` (${escapeHtml(clientName)})` : ""} approved the proposal.</p>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px; font-size:14px; line-height:1.7;">
+            <tr>
+              <td style="padding:6px 24px 6px 0; color:#666666; vertical-align:top; white-space:nowrap;">Total approved</td>
+              <td style="padding:6px 0; color:#111111; font-weight:600;">${totalLabel}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 24px 6px 0; color:#666666; vertical-align:top; white-space:nowrap;">Year 1 Support</td>
+              <td style="padding:6px 0; color:#111111;">${supportLabel}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 24px 6px 0; color:#666666; vertical-align:top; white-space:nowrap;">Approved at</td>
+              <td style="padding:6px 0; color:#111111;">${approvedAtLabel} CT</td>
+            </tr>
+            ${clientEmail ? `<tr>
+              <td style="padding:6px 24px 6px 0; color:#666666; vertical-align:top; white-space:nowrap;">Client email</td>
+              <td style="padding:6px 0; color:#111111;"><a href="mailto:${escapeHtml(clientEmail)}" style="color:#9BAB10; text-decoration:underline;">${escapeHtml(clientEmail)}</a></td>
+            </tr>` : ""}
           </table>
-          <p style="font-family:system-ui;font-size:14px;">
-            <a href="${proposalUrl}" style="color:#0066cc;">View the proposal</a>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td style="background:#111111;">
+                <a href="${proposalUrl}" style="display:inline-block; padding:14px 26px; color:#FAFAF7; text-decoration:none; font-size:12px; letter-spacing:0.18em; text-transform:uppercase; font-weight:500;">View the proposal</a>
+              </td>
+            </tr>
+          </table>
+        `;
+
+        await resend.emails.send({
+          from: RESEND_FROM,
+          to: adminEmail,
+          subject: `Proposal approved: ${project.title}`,
+          html: brandedEmailShell({
+            preheader: `${approver_name} approved ${project.title} for ${totalLabel}.`,
+            eyebrow: "Monday + Partners · Approval",
+            headline: project.title,
+            body: adminBody,
+          }),
+        });
+      } catch (emailError) {
+        console.error("Admin notification failed:", emailError);
+      }
+    } else {
+      console.warn("ADMIN_EMAIL not set; skipping admin notification.");
+    }
+
+    // 2) Client confirmation
+    if (clientEmail) {
+      try {
+        const clientBody = `
+          <p style="margin:0 0 16px;">Thanks${clientName ? `, ${escapeHtml(clientName.split(" ")[0])}` : ""}. Your approval of <strong>${escapeHtml(project.title)}</strong> is confirmed and recorded.</p>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px; font-size:14px; line-height:1.7;">
+            <tr>
+              <td style="padding:6px 24px 6px 0; color:#666666; vertical-align:top; white-space:nowrap;">Total approved</td>
+              <td style="padding:6px 0; color:#111111; font-weight:600;">${totalLabel}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 24px 6px 0; color:#666666; vertical-align:top; white-space:nowrap;">Year 1 Support</td>
+              <td style="padding:6px 0; color:#111111;">${supportLabel}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 24px 6px 0; color:#666666; vertical-align:top; white-space:nowrap;">Approved by</td>
+              <td style="padding:6px 0; color:#111111;">${escapeHtml(approver_name)}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 24px 6px 0; color:#666666; vertical-align:top; white-space:nowrap;">Recorded at</td>
+              <td style="padding:6px 0; color:#111111;">${approvedAtLabel} CT</td>
+            </tr>
+          </table>
+          <p style="margin:0 0 16px;">Here's what happens next. We'll prepare the task order and follow up within one to two business days. The proposal stays available at your portal for reference.</p>
+          <p style="margin:0 0 24px;">If anything looks off, or if you'd like to talk through scheduling, reply to this email or reach Dylan directly.</p>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td style="background:#111111;">
+                <a href="${APP_URL}/projects" style="display:inline-block; padding:14px 26px; color:#FAFAF7; text-decoration:none; font-size:12px; letter-spacing:0.18em; text-transform:uppercase; font-weight:500;">Open the portal</a>
+              </td>
+            </tr>
+          </table>
+          <p style="margin:32px 0 0; font-size:13px; line-height:1.6; color:#666666;">
+            <strong style="color:#111111;">Dylan DiBona</strong> &nbsp;·&nbsp; Chief Creative Partner<br>
+            <a href="mailto:dylan@mondayandpartners.com" style="color:#9BAB10; text-decoration:underline;">dylan@mondayandpartners.com</a>
           </p>
-          <p style="font-family:system-ui;font-size:12px;color:#999;margin-top:24px;">
-            Sent automatically by projects.mondayandpartners.com.
-          </p>
-        `,
-      });
-    } catch (emailError) {
-      // Approval is already persisted in Supabase. Log and move on.
-      console.error("Resend notification failed:", emailError);
+        `;
+
+        await resend.emails.send({
+          from: RESEND_FROM,
+          to: clientEmail,
+          subject: `Approval confirmed — ${project.title}`,
+          html: brandedEmailShell({
+            preheader: `Your approval of ${project.title} (${totalLabel}) is recorded.`,
+            eyebrow: "Monday + Partners · Approval Confirmed",
+            headline: "Thank you. Your approval is in.",
+            body: clientBody,
+          }),
+        });
+      } catch (emailError) {
+        console.error("Client confirmation failed:", emailError);
+      }
+    } else {
+      console.warn("clientEmail not found; skipping client confirmation.");
     }
   } else {
-    console.warn(
-      "RESEND_API_KEY or ADMIN_EMAIL not set; skipping notification email."
-    );
+    console.warn("RESEND_API_KEY not set; skipping all notification emails.");
   }
 
   return NextResponse.json({ success: true });
