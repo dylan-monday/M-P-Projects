@@ -18,6 +18,19 @@ A client-facing proposal and project management portal for Monday + Partners (M+
 
 ---
 
+## Recent additions (May 18, 2026 — late afternoon, OTP auth fix)
+
+Madeline tried to sign in and bounced back to /login. Diagnosed a chain of three issues with the auth flow and rebuilt the email path end-to-end:
+
+- **OTP code is now the primary auth path, not clickable magic links.** The login form is a two-step state machine: collect email → fire `signInWithOtp` → collect 6-digit code → `verifyOtp`. The form (`src/app/(auth)/login/login-form.tsx`) tries `verifyOtp` against three token types in sequence (`magiclink`, `signup`, `email`) because Supabase tags the OTP differently based on user state and the docs are ambiguous; failed verifies don't consume the token, so the fallback is safe.
+- **Auth email templates are code-only.** `docs/email-templates/magic-link.html` and `confirm-signup.html` show `{{ .Token }}` (the 6-digit code) and intentionally omit `{{ .ConfirmationURL }}`. Email security scanners (Gmail, M365 Defender, government inboxes) pre-fetch links and burn the OTP before the user clicks; no URL in the email means nothing to pre-fetch. Do not add the URL back without a real plan; see `docs/email-templates/SETUP.md` for the reasoning.
+- **6-digit codes, set in two places.** The login form hard-codes 6 (input maxLength, slice, validation). Supabase Dashboard → Authentication → Providers → Email → OTP Length is also 6. Both must stay in sync.
+- **Auth + transactional sender name.** Auth emails come from `Monday + Partners <notifications@mondayandpartners.com>` (Supabase SMTP). Resend transactional emails (approval admin + client confirmation) use the same RFC 5322 format via `RESEND_FROM` so recipients see one brand across the lifecycle. `RESEND_FROM_NAME` env var can override.
+- **`?error=auth_failed` surfaced on /login.** The form now reads `searchParams.get("error")` and shows a human-readable message; failed callbacks aren't silent anymore.
+- **Two auth callback routes still exist** (`/api/auth/callback` server PKCE, `/auth/callback` client hash+PKCE). With OTP code as primary, the only consumer is `scripts/generate-magic-link.ts`. Treat as legacy; consolidate during rebuild.
+
+To apply this in Supabase: paste `docs/email-templates/magic-link.html` and `confirm-signup.html` into the Magic Link and Confirm Signup template slots respectively, set OTP Length to 6, set SMTP sender name to "Monday + Partners".
+
 ## Recent additions (May 18, 2026 — admin surface)
 
 Building out admin client-management and per-project collaborator assignment:
@@ -161,9 +174,10 @@ There are two flows depending on whether a project has a custom-HTML proposal.
 
 ### Authentication
 
-- **Clients:** magic link via Supabase Auth. Sent from Supabase's domain currently (tech debt — should use custom SMTP via Resend).
+- **Clients:** 6-digit OTP code via Supabase Auth (custom SMTP through Resend). Two-step form: enter email → enter code. Templates are code-only (no clickable link) so email scanners can't pre-fetch and burn the OTP. `verifyOtp` cycles through `magiclink` → `signup` → `email` token types because Supabase tags OTPs differently based on user state.
 - **Admin:** email + password via `supabase.auth.signInWithPassword`. Set via `scripts/set-admin-password.ts`. `/login` detects `@mondayandpartners.com` emails and shows password field.
-- **Authorization:** middleware enforces admin-only access to `/admin/*`. For `/protected/p/{slug}/*`, middleware verifies the user is either `ADMIN_EMAIL` or the client tied to that project (per Supabase RLS).
+- **Authorization:** middleware enforces admin-only access to `/admin/*`. For `/protected/p/{slug}/*`, middleware verifies the user is either `ADMIN_EMAIL` or a collaborator on that project (per Supabase RLS on the `project_collaborators` join table from migration 003).
+- **Legacy:** `/api/auth/callback` (server PKCE) and `/auth/callback` (client hash+PKCE) routes still exist but the OTP form bypasses them entirely. Only `scripts/generate-magic-link.ts` still uses the client callback.
 
 ### Payments
 - Stripe Checkout (redirect flow)

@@ -189,6 +189,47 @@ If both come back yes via email, the engagement is fully buttoned up and ready t
 - `docs/PORTAL_VISION.md` — long-term vision and phased rebuild plan
 - `bugs.md` — current tech debt
 - `CLAUDE.md` — operational reference for the current codebase
+- `docs/email-templates/SETUP.md` — auth email setup + why code-only
 - `docs/background/M+P_client_portal_spec.md` — original portal spec
 - `docs/background/PROJECT_CONTEXT.md` — original project context
 - Team Drives: `_M+P Client Work/LED/LA.IO/_2026/_2026-02-26 Startup Report/` — canonical proposal location, Cotton communication drafts, all client-facing artifacts
+
+---
+
+## Addendum — late May 18 (admin surface + auth fix)
+
+Picked the work back up. Three buckets landed after the original handoff above.
+
+### Admin surface for clients and collaborators
+
+- Migration 003 (`scripts/migration-003-project-collaborators.sql`): `project_collaborators` join table with `role` enum (primary / collaborator / viewer). Backfills existing `projects.client_id` rows as `role='primary'`. RLS extended on `projects`, `milestones`, `deliverables`, `notes` so any collaborator can SELECT — additive to existing policies, so `client_id`-based access still works.
+- `/admin/clients` page — list + inline add-client form. Creating a client also creates a pre-confirmed `auth.users` row so they can sign in immediately.
+- `/admin/projects/[slug]` page — per-project collaborator management (add by dropdown, remove inline). Admin nav links Projects ↔ Clients.
+- APIs: `POST /api/admin/clients`, `POST/DELETE /api/admin/projects/[slug]/collaborators`. Admin-only.
+- `/admin` project list gained a per-row Manage button.
+- Approval route extended: any collaborator can approve. Confirmation email goes to whoever clicked Approve; falls back to primary client when admin acts on their behalf.
+
+### Approval email templates extracted
+
+- `docs/email-templates/proposal-approved-admin.html` and `proposal-approved-client.html` — paper-light, same family as the auth templates. Loaded at runtime by the approve route via `src/lib/email/templates.ts` with `{{ token }}` substitution. NOT Supabase Auth templates — Supabase has no slot for transactional/domain emails. `next.config.ts` has `outputFileTracingIncludes` so the docs folder ships in the Vercel function bundle.
+
+### Auth flow rebuilt around OTP code
+
+When Madeline tried to sign in via magic link, she bounced back to `/login`. Root-cause chain:
+
+1. Email security scanners (Gmail, M365 Defender) pre-fetch links and burn the OTP token before the user can click.
+2. The login form was passing `type: 'email'` to `verifyOtp`, but Supabase tags `signInWithOtp` tokens as `'magiclink'` (returning) or `'signup'` (new).
+3. Supabase's OTP Length setting was 8 in this project; the form's input was truncating to 6.
+
+Fix:
+
+- Login form is now a two-step state machine: collect email → fire `signInWithOtp` → collect 6-digit code → `verifyOtp` cycling through `magiclink` → `signup` → `email` types in order.
+- `magic-link.html` and `confirm-signup.html` removed `{{ .ConfirmationURL }}` entirely. Code-only. No URL = nothing to pre-fetch.
+- Supabase OTP Length reset to 6 in the dashboard; form hard-locked at 6 (input maxLength, slice, validation, copy throughout).
+- Form surfaces `?error=auth_failed` on `/login` so failed callbacks aren't silent anymore.
+- Resend `from` formatted as `Monday + Partners <notifications@mondayandpartners.com>` for transactional emails (matches auth email sender name).
+- Madeline successfully signed in via 6-digit code on the second attempt.
+
+### Where this leaves things
+
+The bridge isn't a bridge anymore — it's the live production surface for a real procurement engagement. It works. It's duct-taped. See the updated `docs/PORTAL_VISION.md` for the rebuild north star. Phase 1 (Figma planning) is the next move, not more code.

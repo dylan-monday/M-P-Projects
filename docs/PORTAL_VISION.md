@@ -1,8 +1,10 @@
 # M+P Client Portal — Vision & Roadmap
 
-*Last updated: May 15, 2026 (after the LA.IO bridge build)*
+*Last updated: May 18, 2026 (after the admin surface + OTP auth fix)*
 
 This document is the north star for `projects.mondayandpartners.com`. It captures what the portal is meant to be, where it falls short today, and how we get from current state to an agency-grade client experience worthy of the M+P brand. Read this before planning any significant work on the portal.
+
+**Status as of May 18, 2026:** the LA.IO bridge is now live and Madeline successfully signed in via the OTP code flow. The portal works for getting this proposal out the door. **It is, in Dylan's words, "duct-taped together":** two unresolved design systems, three-fallback auth code, denormalized schema, a primary-client column kept alongside a collaborators join table, a dead auth-callback route, no tests, no staging, no monitoring. Each duct-tape patch was the right call to ship the LA.IO engagement. Cumulatively, they're the argument for the rebuild. Don't paper-cut them. Plan the rebuild and replace them in one coherent sweep.
 
 ---
 
@@ -26,14 +28,17 @@ The longer-term ambition is that adding a new client engagement becomes data ent
 ### Infrastructure (real and working)
 
 - Next.js 16 (Turbopack) on Vercel, deployed at `projects.mondayandpartners.com`
-- Supabase auth (magic link for clients, email+password for admin) with RLS-enforced per-client data access
-- Schema: `clients`, `projects`, `milestones`, `deliverables`, `notes`, with approval fields added in `migration-002`
+- Supabase auth: 6-digit OTP code emailed to clients (paste into form, no clickable link), email+password for admin (`@mondayandpartners.com` domain)
+- RLS-enforced per-collaborator data access via the `project_collaborators` join table (migration 003)
+- Schema: `clients`, `projects`, `milestones`, `deliverables`, `notes`, `project_collaborators`, with approval fields on `projects`
 - Stripe Checkout integration for deposit/final payments (set up but exercised only for the test project)
-- Resend integration for transactional admin notifications (approval emails)
-- Auth middleware that gates `/admin/*` and `/protected/*` with per-project authorization
-- Client area at `/projects` listing all of a logged-in client's projects with status badges
-- Admin dashboard at `/admin` listing every project across every client
-- Approval API at `/api/projects/[slug]/approve` that persists to Supabase and fires the Resend email
+- Resend integration for transactional emails — both auth (via Supabase custom SMTP) and approval notifications (direct from API routes)
+- Auth middleware that gates `/admin/*` and `/protected/*` with per-project authorization (any collaborator allowed)
+- Client area at `/projects` listing all projects the user collaborates on, with status badges
+- Admin dashboard at `/admin` listing every project, with per-row Manage link
+- Admin `/admin/clients` page for creating clients (auto-creates pre-confirmed `auth.users` record)
+- Admin `/admin/projects/[slug]` page for managing collaborators (add/remove with role)
+- Approval API at `/api/projects/[slug]/approve` that authorizes any collaborator, persists to Supabase, and fires Resend emails to both admin and approver
 
 ### Two design systems coexisting (the honest part)
 
@@ -49,14 +54,19 @@ The Louisiana Startup Report proposal (custom HTML, M+P brand) is served as a st
 
 This is bridge work. It gets LA.IO their proposal securely behind login without rebuilding everything first. It is intentionally not the long-term shape.
 
-### Tech debt taken on tonight
+### Tech debt accumulated through May 18
 
-To ship the LA.IO bridge, we accepted:
+To ship the LA.IO bridge and the admin surface, we accepted:
 
 - **TS/ESLint build errors are bypassed.** `next.config.ts` has `typescript.ignoreBuildErrors` and `eslint.ignoreDuringBuilds` set to true. Reason: pre-existing Framer Motion + React 19 type incompatibilities in Drafting Table components (`cta-block.tsx`, `typography.tsx`) block production builds. These need to be either fixed in place or rendered obsolete by the M+P brand rebuild before the bypass can be removed.
 - **`middleware.ts` is the legacy convention.** Next 16 wants this renamed to `proxy.ts`. Deprecation warning is non-blocking but should be addressed.
 - **Approval-state schema is grafted on.** Approval lives as a `awaiting_deposit` status + `approved_at` timestamp on the projects table. Works, but a dedicated approvals table (with audit log, version of terms approved, supporting metadata) would be cleaner for serious procurement use.
 - **Custom-HTML proposals are listed in a code constant** (`src/lib/proposals.ts: CUSTOM_PROPOSAL_SLUGS`). Adding a new custom-HTML proposal requires a code change. Should be promoted to a column on the projects table when there's a second one.
+- **`projects.client_id` is denormalized after the collaborators migration.** The join table is the source of truth for visibility; `client_id` is preserved as a primary-contact pointer. Decide during the rebuild whether to drop it or promote a `primary_collaborator_id` to the join table.
+- **Two auth callback routes exist** (`/api/auth/callback` server-side PKCE, `/auth/callback` client-side hash+PKCE). The login form now uses neither (OTP code path); only the admin impersonation script still uses one of them. The server route is essentially dead code. Decide during the rebuild whether to keep one or rip both out.
+- **`verifyOtp` cycles through three token types** in the login form (`magiclink`, `signup`, `email`) because Supabase tags OTPs differently based on user state and the docs are ambiguous. Works; not deterministic.
+- **The OTP length (6) is hardcoded in the form** (input maxLength, slice, validation). Supabase controls the actual length via dashboard config. If those two ever drift, the form breaks silently.
+- **Auth email templates are code-only by design.** No `{{ .ConfirmationURL }}` because email scanners pre-fetch and burn the OTP. Document and preserve this; don't let a future maintainer "improve UX" by adding a clickable button back.
 
 ---
 
@@ -156,13 +166,15 @@ The honest version of this list: we have basically none of it today. That's appr
 
 These should be resolved during Phase 1 planning, not assumed:
 
-**Multi-user-per-project.** Today's schema is one client (one email) per project. The LA.IO engagement realistically wants Madeline + a few Tulane staff + an Emily to all view the proposal. The schema needs either a `project_users` join table or an array of authorized emails per project. Resolve before the next government client.
+**~~Multi-user-per-project.~~** **Resolved May 18.** `project_collaborators` join table with role enum. `projects.client_id` retained as denormalized primary pointer; revisit during rebuild whether to keep it.
 
 **Approval state model.** Should approval be a status, a timestamp, or a separate `approvals` table with audit history? For government work, an audit log is probably required. Decide before serious procurement.
 
 **Proposal content storage.** Supabase rows? Per-project JSON files? Markdown with frontmatter? Each has tradeoffs in editing UX, version control, search. Decide before generalizing.
 
-**Magic-link email branding.** Currently Supabase sends the magic link from its own domain. For the M+P brand experience, the magic link should come from `notifications@mondayandpartners.com` with an M+P-designed email template. Supabase supports custom SMTP; we should configure Resend as the SMTP provider for auth emails.
+**~~Magic-link email branding.~~** **Resolved May 15-18.** Auth emails route through Resend via Supabase custom SMTP, arrive as `Monday + Partners <notifications@mondayandpartners.com>`. Templates are M+P paper-light and code-only.
+
+**Auth callback consolidation.** Two routes (`/api/auth/callback` server, `/auth/callback` client) currently exist. With the OTP code flow as primary, almost no one hits them. Decide whether to consolidate to one route or remove entirely.
 
 **Stripe checkout styling.** Stripe Checkout's hosted page can be lightly themed but is fundamentally Stripe's UI. For agency-grade, we might want Stripe Elements embedded in our own M+P brand checkout page. Tradeoff: more compliance scope.
 
@@ -172,13 +184,15 @@ These should be resolved during Phase 1 planning, not assumed:
 
 **Drafting Table type errors block strict builds.** Currently bypassed. If we keep building on Drafting Table, the bypass stays. If we replace it, this resolves naturally.
 
-**Pre-existing CLAUDE.md and the new vision document drift.** This doc captures today's strategic position; the older CLAUDE.md captures the original Drafting Table direction. Future maintainers should treat this doc as authoritative for direction, CLAUDE.md as authoritative for current code behavior, and reconcile when they conflict.
+**Pre-existing CLAUDE.md and the new vision document drift.** This doc captures today's strategic position; CLAUDE.md captures current code behavior. Future maintainers should treat this doc as authoritative for direction, CLAUDE.md as authoritative for current code behavior, and reconcile when they conflict.
 
 **No staging environment.** Today we deploy main directly to production. For a client portal serving government clients, we should add a preview/staging environment (Vercel makes this easy) before next launch.
 
 **No backups verified.** Supabase has automated backups, but we haven't tested restore. Before serious data accrues, run a recovery drill.
 
-**LA.IO is a real procurement client now.** The portal is officially serving a government-adjacent engagement. Standards have implicitly moved up. Don't ship visible changes to production without proper testing.
+**No automated tests on the auth flow.** All the auth tweaks made on May 18 (collaborators, OTP type fallback, code-only emails, 6-digit standardization) were validated manually. A regression in any of them silently breaks sign-in. Test coverage on the auth path is the first thing to add when the rebuild begins — even before redesigning visuals.
+
+**LA.IO is a real procurement client now.** The portal is officially serving a government-adjacent engagement and Madeline has successfully signed in. Standards have implicitly moved up. Don't ship visible changes to production without proper testing.
 
 ---
 
