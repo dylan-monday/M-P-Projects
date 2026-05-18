@@ -123,13 +123,15 @@ export function LoginForm() {
     setMessage(null);
 
     const supabase = createClient();
-    const cleaned = code.replace(/\D/g, "").slice(0, 6);
+    const cleaned = code.replace(/\D/g, "").slice(0, 10);
 
-    if (cleaned.length !== 6) {
+    // Supabase OTP length is configurable (default 6, this project is 8).
+    // Accept anything in the plausible range and let GoTrue make the final call.
+    if (cleaned.length < 6) {
       setIsLoading(false);
       setMessage({
         type: "error",
-        text: "The code is 6 digits. Check your email and try again.",
+        text: "Enter the full code from your email.",
       });
       return;
     }
@@ -187,7 +189,7 @@ export function LoginForm() {
         <form onSubmit={verifyCode} className="space-y-4">
           <div className="space-y-1">
             <p className="text-sm text-foreground-muted">
-              We sent a 6-digit code to <strong>{email}</strong>.
+              We sent a code to <strong>{email}</strong>.
             </p>
           </div>
 
@@ -196,13 +198,13 @@ export function LoginForm() {
             type="text"
             inputMode="numeric"
             autoComplete="one-time-code"
-            placeholder="123456"
+            placeholder="••••••••"
             value={code}
             onChange={(e) =>
-              setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+              setCode(e.target.value.replace(/\D/g, "").slice(0, 10))
             }
             required
-            maxLength={6}
+            maxLength={10}
             className="text-center tracking-[0.4em] font-mono"
           />
 
