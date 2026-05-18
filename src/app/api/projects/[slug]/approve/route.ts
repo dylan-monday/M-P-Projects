@@ -71,7 +71,7 @@ function brandedEmailShell({
           <tr><td style="height:4px; background:#C9D92E; line-height:1px; font-size:1px;">&nbsp;</td></tr>
           <tr>
             <td style="padding:32px 0 28px;">
-              <img src="${APP_URL}/brand/MP26.png" alt="Monday + Partners" width="56" height="56" style="display:block; border:0; outline:none; text-decoration:none;">
+              <img src="${APP_URL}/favicon.png" alt="Monday + Partners" width="56" height="56" style="display:block; border:0; outline:none; text-decoration:none;">
             </td>
           </tr>
           <tr>
