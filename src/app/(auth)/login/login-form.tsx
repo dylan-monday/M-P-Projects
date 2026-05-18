@@ -134,18 +134,39 @@ export function LoginForm() {
       return;
     }
 
-    const { error } = await supabase.auth.verifyOtp({
-      email,
-      token: cleaned,
-      type: "email",
-    });
+    // signInWithOtp tags the underlying token as 'magiclink' for returning
+    // users and 'signup' for first-time confirmations. We don't know which
+    // path Supabase took at request time, so we try both. A failed verify
+    // does NOT consume the token (only a successful one does) — so the
+    // fallback attempt is safe.
+    const typeOrder: Array<"magiclink" | "signup" | "email"> = [
+      "magiclink",
+      "signup",
+      "email",
+    ];
+
+    let lastError: Error | null = null;
+    let signedIn = false;
+    for (const otpType of typeOrder) {
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        email,
+        token: cleaned,
+        type: otpType,
+      });
+      if (!verifyError) {
+        signedIn = true;
+        break;
+      }
+      lastError = verifyError;
+    }
 
     setIsLoading(false);
-    if (error) {
+
+    if (!signedIn) {
       setMessage({
         type: "error",
         text:
-          error.message ||
+          lastError?.message ||
           "That code didn't work. Double-check the latest email or request a new code.",
       });
       return;
