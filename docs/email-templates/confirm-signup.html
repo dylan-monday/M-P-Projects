@@ -15,10 +15,10 @@
   (no auth.users record yet). Returning users get the Magic Link template.
 
   Supabase template variables used:
-    {{ .Token }}             One-time confirmation code (the only auth
-                             vector). Length is set in Supabase Dashboard →
-                             Authentication → Auth Providers → Email → OTP
-                             Length. This project uses 8 digits.
+    {{ .Token }}             6-digit one-time confirmation code (the only
+                             auth vector). Length is set in Supabase
+                             Dashboard → Authentication → Auth Providers →
+                             Email → OTP Length. This project uses 6.
 
   Subject (Supabase has a separate field):
     Welcome to Monday + Partners — confirm your sign-in
@@ -52,7 +52,7 @@
           <!-- Body -->
           <tr>
             <td style="padding:0 0 24px; font-size:16px; line-height:1.6; color:#333333;">
-              <p style="margin:0;">Welcome. Enter this code on the sign-in page to access the Monday + Partners client portal. The code is valid for one hour and can be used once.</p>
+              <p style="margin:0;">Welcome. Enter this 6-digit code on the sign-in page to access the Monday + Partners client portal. The code is valid for one hour and can be used once.</p>
             </td>
           </tr>
 

@@ -28,7 +28,7 @@ export default function LoginPage() {
 
         {/* Help text */}
         <p className="text-center text-xs text-foreground-subtle">
-          Clients receive a one-time login link by email.
+          Clients receive a 6-digit sign-in code by email.
         </p>
       </div>
     </div>

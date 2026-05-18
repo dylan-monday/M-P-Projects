@@ -12,10 +12,10 @@
   no URL to fetch. Do not add {{ .ConfirmationURL }} back to this template.
 
   Supabase template variables used:
-    {{ .Token }}             One-time code (the only auth vector). Length is
-                             set in Supabase Dashboard → Authentication →
-                             Auth Providers → Email → OTP Length. This
-                             project uses 8 digits.
+    {{ .Token }}             6-digit one-time code (the only auth vector).
+                             Length is set in Supabase Dashboard →
+                             Authentication → Auth Providers → Email →
+                             OTP Length. This project uses 6.
     {{ .SiteURL }}           The configured Site URL (for safe display only)
 
   Subject (Supabase has a separate field):
@@ -47,7 +47,7 @@
 
           <tr>
             <td style="padding:0 0 24px; font-size:16px; line-height:1.6; color:#333333;">
-              <p style="margin:0;">Enter this code on the sign-in page to access your portal. The code is valid for one hour and can be used once.</p>
+              <p style="margin:0;">Enter this 6-digit code on the sign-in page to access your portal. The code is valid for one hour and can be used once.</p>
             </td>
           </tr>
 
