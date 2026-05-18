@@ -75,6 +75,27 @@ export interface Note {
   created_at: string;
 }
 
+export type CollaboratorRole = "primary" | "collaborator" | "viewer";
+
+export interface ProjectCollaborator {
+  id: string;
+  project_id: string;
+  client_id: string;
+  role: CollaboratorRole;
+  added_at: string;
+  added_by_email: string | null;
+  // Joined data
+  client?: Client;
+  project?: Project;
+}
+
+export interface ProjectCollaboratorInsert {
+  project_id: string;
+  client_id: string;
+  role?: CollaboratorRole;
+  added_by_email?: string | null;
+}
+
 /**
  * Insert types (without auto-generated fields)
  */

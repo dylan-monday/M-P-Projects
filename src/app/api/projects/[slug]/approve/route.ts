@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { renderEmail } from "@/lib/email/templates";
 
 /**
  * Persist proposal approval to Supabase and send branded emails.
@@ -9,13 +10,18 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
  *
  *   1. Admin notification → ADMIN_EMAIL (Dylan).
  *      Subject: "Proposal approved: {project title}"
- *      Body: M+P paper-light, summarizes who approved, total, support choice,
- *      timestamp, link back to the proposal.
+ *      Template: docs/email-templates/proposal-approved-admin.html
  *
  *   2. Client confirmation → the approving client's email.
- *      Subject: "Your Monday + Partners proposal — approval confirmed"
- *      Body: M+P paper-light, confirms what they approved, reassures about
- *      next steps, provides Dylan's direct contact.
+ *      Subject: "Approval confirmed — {project title}"
+ *      Template: docs/email-templates/proposal-approved-client.html
+ *
+ * The templates live alongside the Supabase auth templates (magic-link,
+ * confirm-signup) so the whole email family edits and previews in one
+ * place. They are NOT Supabase auth templates — Supabase only sends auth
+ * emails (magic link, confirm signup, etc.). These are transactional,
+ * sent from this route via Resend, and use the same paper-light design
+ * system so the user sees one consistent voice.
  *
  * Email failures are logged but never fail the request. Approval is
  * authoritative in Supabase regardless.
@@ -28,75 +34,21 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
  *   }
  */
 
-const RESEND_FROM =
+// Format: `Display Name <address@domain>` so inboxes show "Monday + Partners"
+// in the sender column. RESEND_FROM_EMAIL can override the address half;
+// RESEND_FROM_NAME can override the display name. Defaults match the Supabase
+// SMTP "Sender name / Sender email" pair so auth and transactional emails
+// look identical in the recipient's inbox.
+const RESEND_FROM_NAME = process.env.RESEND_FROM_NAME || "Monday + Partners";
+const RESEND_FROM_ADDRESS =
   process.env.RESEND_FROM_EMAIL || "notifications@mondayandpartners.com";
+const RESEND_FROM = `${RESEND_FROM_NAME} <${RESEND_FROM_ADDRESS}>`;
 const APP_URL =
   process.env.NEXT_PUBLIC_APP_URL || "https://projects.mondayandpartners.com";
 
 function fmtDollarsFromCents(cents: number | null | undefined): string {
   if (typeof cents !== "number") return "—";
   return "$" + (cents / 100).toLocaleString("en-US");
-}
-
-/**
- * M+P paper-light email shell. Wraps an inner content fragment in the
- * brand-consistent layout used across all portal emails. The shell mirrors
- * the magic-link template at docs/email-templates/magic-link.html so every
- * email the client sees feels like the same family.
- */
-function brandedEmailShell({
-  preheader,
-  eyebrow,
-  headline,
-  body,
-}: {
-  preheader: string;
-  eyebrow: string;
-  headline: string;
-  body: string;
-}): string {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${escapeHtml(headline)}</title>
-</head>
-<body style="margin:0; padding:0; background:#FAFAF7; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; color:#111111; -webkit-font-smoothing:antialiased;">
-  <div style="display:none; max-height:0; overflow:hidden; visibility:hidden; mso-hide:all;">${escapeHtml(preheader)}</div>
-  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#FAFAF7;">
-    <tr>
-      <td align="center" style="padding:40px 20px;">
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:560px; margin:0 auto; background:#FAFAF7;">
-          <tr><td style="height:4px; background:#C9D92E; line-height:1px; font-size:1px;">&nbsp;</td></tr>
-          <tr>
-            <td style="padding:32px 0 28px;">
-              <img src="${APP_URL}/favicon.png" alt="Monday + Partners" width="56" height="56" style="display:block; border:0; outline:none; text-decoration:none;">
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:0 0 24px;">
-              <p style="margin:0 0 12px; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; color:#555555;">${escapeHtml(eyebrow)}</p>
-              <h1 style="margin:0; font-size:26px; font-weight:500; line-height:1.25; color:#111111;">${escapeHtml(headline)}</h1>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:0 0 32px; font-size:16px; line-height:1.6; color:#333333;">
-              ${body}
-            </td>
-          </tr>
-          <tr>
-            <td style="padding-top:24px; border-top:1px solid #E5E2D8;">
-              <p style="margin:0 0 4px; font-size:10px; letter-spacing:0.25em; text-transform:uppercase; color:#555555;">Clarity · Conjuring · Currency</p>
-              <p style="margin:6px 0 0; font-size:11px; color:#888888;">Monday + Partners · New Orleans</p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
 }
 
 function escapeHtml(s: string): string {
@@ -156,16 +108,42 @@ export async function POST(
 
   const adminEmail = process.env.ADMIN_EMAIL;
   const isAdmin = user.email === adminEmail;
-  const client = Array.isArray(project.client)
+  // "Primary client" is the projects.client_id record. Used for the
+  // confirmation email recipient when admin acts on the project's behalf,
+  // and as a fallback friendly name. Not the only authorized approver
+  // anymore — any collaborator can approve.
+  const primaryClient = Array.isArray(project.client)
     ? project.client[0]
     : (project.client as { email: string; name: string } | null);
-  const clientEmail = client?.email;
-  const clientName = client?.name;
-  const isClient = user.email === clientEmail;
 
-  if (!isAdmin && !isClient) {
+  // Authorization: admin, primary client, or any collaborator on this project.
+  let isAuthorized = isAdmin || user.email === primaryClient?.email;
+  if (!isAuthorized && user.email) {
+    const { data: collaboratorRow } = await adminSupabase
+      .from("project_collaborators")
+      .select("id, client:clients(email)")
+      .eq("project_id", project.id);
+
+    const collaboratorEmails = (collaboratorRow || [])
+      .map((row) => {
+        const c = Array.isArray(row.client) ? row.client[0] : row.client;
+        return (c as { email?: string } | null)?.email;
+      })
+      .filter(Boolean) as string[];
+
+    isAuthorized = collaboratorEmails.includes(user.email);
+  }
+
+  if (!isAuthorized) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
+
+  // The confirmation email goes to whoever actually clicked Approve. That's
+  // the most defensible default — they performed the action, they get the
+  // receipt. Falls back to the primary client when the approver is admin
+  // (admin acting on the client's behalf).
+  const approverEmail = isAdmin ? primaryClient?.email : user.email;
+  const approverDisplayName = primaryClient?.name || null;
 
   const approvedAt = new Date().toISOString();
   const supportIncluded =
@@ -202,48 +180,44 @@ export async function POST(
     const totalLabel = fmtDollarsFromCents(totalCents);
     const supportLabel = supportIncluded ? "Included" : "Declined";
 
+    // Common vars shared by both templates.
+    const projectTitleSafe = escapeHtml(project.title);
+    const approverNameSafe = escapeHtml(approver_name);
+
     // 1) Admin notification
     if (adminEmail) {
       try {
-        const adminBody = `
-          <p style="margin:0 0 16px;"><strong>${escapeHtml(approver_name)}</strong>${clientName ? ` (${escapeHtml(clientName)})` : ""} approved the proposal.</p>
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px; font-size:14px; line-height:1.7;">
-            <tr>
-              <td style="padding:6px 24px 6px 0; color:#666666; vertical-align:top; white-space:nowrap;">Total approved</td>
-              <td style="padding:6px 0; color:#111111; font-weight:600;">${totalLabel}</td>
-            </tr>
-            <tr>
-              <td style="padding:6px 24px 6px 0; color:#666666; vertical-align:top; white-space:nowrap;">Year 1 Support</td>
-              <td style="padding:6px 0; color:#111111;">${supportLabel}</td>
-            </tr>
-            <tr>
-              <td style="padding:6px 24px 6px 0; color:#666666; vertical-align:top; white-space:nowrap;">Approved at</td>
-              <td style="padding:6px 0; color:#111111;">${approvedAtLabel} CT</td>
-            </tr>
-            ${clientEmail ? `<tr>
-              <td style="padding:6px 24px 6px 0; color:#666666; vertical-align:top; white-space:nowrap;">Client email</td>
-              <td style="padding:6px 0; color:#111111;"><a href="mailto:${escapeHtml(clientEmail)}" style="color:#9BAB10; text-decoration:underline;">${escapeHtml(clientEmail)}</a></td>
-            </tr>` : ""}
-          </table>
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-            <tr>
-              <td style="background:#111111;">
-                <a href="${proposalUrl}" style="display:inline-block; padding:14px 26px; color:#FAFAF7; text-decoration:none; font-size:12px; letter-spacing:0.18em; text-transform:uppercase; font-weight:500;">View the proposal</a>
-              </td>
-            </tr>
-          </table>
-        `;
+        const clientNameParen = approverDisplayName
+          ? ` (${escapeHtml(approverDisplayName)})`
+          : "";
+        const approverEmailForDisplay = approverEmail;
+        const clientEmailRow = approverEmailForDisplay
+          ? `<tr>
+              <td style="padding:6px 24px 6px 0; color:#666666; vertical-align:top; white-space:nowrap;">Approver email</td>
+              <td style="padding:6px 0; color:#111111;"><a href="mailto:${escapeHtml(approverEmailForDisplay)}" style="color:#9BAB10; text-decoration:underline;">${escapeHtml(approverEmailForDisplay)}</a></td>
+            </tr>`
+          : "";
+
+        const html = renderEmail("proposal-approved-admin", {
+          approver_name: approverNameSafe,
+          client_name_paren: clientNameParen,
+          project_title: projectTitleSafe,
+          total_label: totalLabel,
+          support_label: supportLabel,
+          approved_at_label: approvedAtLabel,
+          client_email: approverEmailForDisplay
+            ? escapeHtml(approverEmailForDisplay)
+            : "",
+          client_email_row: clientEmailRow,
+          proposal_url: proposalUrl,
+          app_url: APP_URL,
+        });
 
         await resend.emails.send({
           from: RESEND_FROM,
           to: adminEmail,
           subject: `Proposal approved: ${project.title}`,
-          html: brandedEmailShell({
-            preheader: `${approver_name} approved ${project.title} for ${totalLabel}.`,
-            eyebrow: "Monday + Partners · Approval",
-            headline: project.title,
-            body: adminBody,
-          }),
+          html,
         });
       } catch (emailError) {
         console.error("Admin notification failed:", emailError);
@@ -252,60 +226,37 @@ export async function POST(
       console.warn("ADMIN_EMAIL not set; skipping admin notification.");
     }
 
-    // 2) Client confirmation
-    if (clientEmail) {
+    // 2) Approver confirmation (whoever clicked Approve; primary client if
+    //    admin acted on their behalf)
+    if (approverEmail) {
       try {
-        const clientBody = `
-          <p style="margin:0 0 16px;">Thanks${clientName ? `, ${escapeHtml(clientName.split(" ")[0])}` : ""}. Your approval of <strong>${escapeHtml(project.title)}</strong> is confirmed and recorded.</p>
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px; font-size:14px; line-height:1.7;">
-            <tr>
-              <td style="padding:6px 24px 6px 0; color:#666666; vertical-align:top; white-space:nowrap;">Total approved</td>
-              <td style="padding:6px 0; color:#111111; font-weight:600;">${totalLabel}</td>
-            </tr>
-            <tr>
-              <td style="padding:6px 24px 6px 0; color:#666666; vertical-align:top; white-space:nowrap;">Year 1 Support</td>
-              <td style="padding:6px 0; color:#111111;">${supportLabel}</td>
-            </tr>
-            <tr>
-              <td style="padding:6px 24px 6px 0; color:#666666; vertical-align:top; white-space:nowrap;">Approved by</td>
-              <td style="padding:6px 0; color:#111111;">${escapeHtml(approver_name)}</td>
-            </tr>
-            <tr>
-              <td style="padding:6px 24px 6px 0; color:#666666; vertical-align:top; white-space:nowrap;">Recorded at</td>
-              <td style="padding:6px 0; color:#111111;">${approvedAtLabel} CT</td>
-            </tr>
-          </table>
-          <p style="margin:0 0 16px;">Here's what happens next. We'll prepare the task order and follow up within one to two business days. The proposal stays available at your portal for reference.</p>
-          <p style="margin:0 0 24px;">If anything looks off, or if you'd like to talk through scheduling, reply to this email or reach Dylan directly.</p>
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-            <tr>
-              <td style="background:#111111;">
-                <a href="${APP_URL}/projects" style="display:inline-block; padding:14px 26px; color:#FAFAF7; text-decoration:none; font-size:12px; letter-spacing:0.18em; text-transform:uppercase; font-weight:500;">Open the portal</a>
-              </td>
-            </tr>
-          </table>
-          <p style="margin:32px 0 0; font-size:13px; line-height:1.6; color:#666666;">
-            <strong style="color:#111111;">Dylan DiBona</strong> &nbsp;·&nbsp; Chief Creative Partner<br>
-            <a href="mailto:dylan@mondayandpartners.com" style="color:#9BAB10; text-decoration:underline;">dylan@mondayandpartners.com</a>
-          </p>
-        `;
+        const approverFirstComma = approver_name
+          ? `, ${escapeHtml(approver_name.split(" ")[0])}`
+          : "";
+
+        const html = renderEmail("proposal-approved-client", {
+          approver_name: approverNameSafe,
+          approver_first_comma: approverFirstComma,
+          project_title: projectTitleSafe,
+          total_label: totalLabel,
+          support_label: supportLabel,
+          approved_at_label: approvedAtLabel,
+          app_url: APP_URL,
+        });
 
         await resend.emails.send({
           from: RESEND_FROM,
-          to: clientEmail,
+          to: approverEmail,
           subject: `Approval confirmed — ${project.title}`,
-          html: brandedEmailShell({
-            preheader: `Your approval of ${project.title} (${totalLabel}) is recorded.`,
-            eyebrow: "Monday + Partners · Approval Confirmed",
-            headline: "Thank you. Your approval is in.",
-            body: clientBody,
-          }),
+          html,
         });
       } catch (emailError) {
-        console.error("Client confirmation failed:", emailError);
+        console.error("Approver confirmation failed:", emailError);
       }
     } else {
-      console.warn("clientEmail not found; skipping client confirmation.");
+      console.warn(
+        "Approver email not resolved; skipping approver confirmation."
+      );
     }
   } else {
     console.warn("RESEND_API_KEY not set; skipping all notification emails.");

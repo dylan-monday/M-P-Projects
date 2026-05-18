@@ -47,36 +47,45 @@ export function ProjectList({ projects }: { projects: ProjectWithClient[] }) {
   return (
     <div className="space-y-3">
       {projects.map((project) => (
-        <Link
+        <div
           key={project.id}
-          href={proposalHref(project.slug)}
-          onClick={() => playBell()}
-          className="group block"
+          className="p-5 border border-white/[0.06] bg-white/[0.02] hover:border-gold-400/20 hover:bg-gold-400/[0.02] transition-all duration-500 rounded-sm"
         >
-          <div className="p-5 border border-white/[0.06] bg-white/[0.02] hover:border-gold-400/20 hover:bg-gold-400/[0.02] transition-all duration-500 rounded-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-light text-white/90 group-hover:text-gold-200 transition-colors duration-300">
-                  {project.title}
-                </h2>
-                <p className="text-sm text-white/40 font-light mt-1">
-                  {project.client?.name} · {project.client?.company}
+          <div className="flex items-center justify-between gap-6">
+            <Link
+              href={proposalHref(project.slug)}
+              onClick={() => playBell()}
+              className="group flex-1 min-w-0"
+            >
+              <h2 className="text-lg font-light text-white/90 group-hover:text-gold-200 transition-colors duration-300">
+                {project.title}
+              </h2>
+              <p className="text-sm text-white/40 font-light mt-1">
+                {project.client?.name} · {project.client?.company}
+              </p>
+            </Link>
+            <div className="flex items-center gap-6 shrink-0">
+              <div className="text-right">
+                <p className="text-base font-light text-white/70 tabular-nums">
+                  {formatCurrency(
+                    (project.deposit_amount || 0) +
+                      (project.final_amount || 0)
+                  )}
+                </p>
+                <p className="text-xs text-white/30 mt-1">
+                  {formatDate(project.created_at)}
                 </p>
               </div>
-              <div className="flex items-center gap-6">
-                <div className="text-right">
-                  <p className="text-base font-light text-white/70 tabular-nums">
-                    {formatCurrency((project.deposit_amount || 0) + (project.final_amount || 0))}
-                  </p>
-                  <p className="text-xs text-white/30 mt-1">
-                    {formatDate(project.created_at)}
-                  </p>
-                </div>
-                <StatusBadge status={project.status} />
-              </div>
+              <StatusBadge status={project.status} />
+              <Link
+                href={`/admin/projects/${project.slug}`}
+                className="text-[10px] tracking-[0.2em] uppercase text-white/40 hover:text-gold-200 border border-white/[0.08] hover:border-gold-400/40 transition-colors duration-300 px-3 py-2 rounded-sm whitespace-nowrap"
+              >
+                Manage
+              </Link>
             </div>
           </div>
-        </Link>
+        </div>
       ))}
     </div>
   );

@@ -2,36 +2,56 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { ProjectList, EmptyState } from "./components/project-list";
-import type { Project, Client } from "@/types";
+import { ClientsView } from "./components/clients-view";
+import type { Client } from "@/types";
 
-export default async function AdminPage() {
+/**
+ * Admin → Clients page.
+ *
+ * Lists every client in the system with a project count and the ability to
+ * add new clients. Adding a client also seeds their auth.users record so
+ * they can magic-link in immediately.
+ *
+ * Pairs with /admin/projects/[slug] for per-project collaborator
+ * management. From here, you create the people; over there, you put them
+ * on the projects.
+ */
+export default async function AdminClientsPage() {
   const supabase = await createClient();
-
-  // Get current user
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Verify admin
   if (!user || user.email !== process.env.ADMIN_EMAIL) {
     redirect("/login");
   }
 
-  // Get all projects
-  const { data: projects, error } = await supabase
-    .from("projects")
-    .select(`
+  // Pull each client with a count of project_collaborators rows so the UI
+  // can show "0 projects" / "3 projects" without a second roundtrip.
+  const { data: clients, error } = await supabase
+    .from("clients")
+    .select(
+      `
       *,
-      client:clients(*)
-    `)
+      project_collaborators(count)
+    `
+    )
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error fetching projects:", error);
+    console.error("Error fetching clients:", error);
   }
 
-  const typedProjects = (projects || []) as (Project & { client: Client })[];
+  type ClientWithCount = Client & {
+    project_collaborators: { count: number }[];
+  };
+
+  const typedClients: (Client & { project_count: number })[] = (
+    (clients as ClientWithCount[]) || []
+  ).map((c) => ({
+    ...c,
+    project_count: c.project_collaborators?.[0]?.count ?? 0,
+  }));
 
   return (
     <div className="min-h-screen relative">
@@ -47,23 +67,33 @@ export default async function AdminPage() {
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link href="/admin" className="flex items-center gap-4">
-              <Image src="/brand/MP26.svg" alt="Monday + Partners" width={56} height={56} className="brightness-0 invert opacity-90" />
-              <span className="text-[10px] tracking-[0.25em] uppercase text-white/40">Admin</span>
+              <Image
+                src="/brand/MP26.svg"
+                alt="Monday + Partners"
+                width={56}
+                height={56}
+                className="brightness-0 invert opacity-90"
+              />
+              <span className="text-[10px] tracking-[0.25em] uppercase text-white/40">
+                Admin
+              </span>
             </Link>
             <nav className="flex items-center gap-5 ml-8">
-              <span className="text-[10px] tracking-[0.2em] uppercase text-white/90">
-                Projects
-              </span>
               <Link
-                href="/admin/clients"
+                href="/admin"
                 className="text-[10px] tracking-[0.2em] uppercase text-white/40 hover:text-white/70 transition-colors duration-300"
               >
-                Clients
+                Projects
               </Link>
+              <span className="text-[10px] tracking-[0.2em] uppercase text-white/90">
+                Clients
+              </span>
             </nav>
           </div>
           <div className="flex items-center gap-6">
-            <span className="text-sm text-white/40 font-light">{user.email}</span>
+            <span className="text-sm text-white/40 font-light">
+              {user.email}
+            </span>
             <form action="/api/auth/logout" method="GET">
               <button
                 type="submit"
@@ -78,16 +108,18 @@ export default async function AdminPage() {
 
       {/* Main */}
       <main className="max-w-5xl mx-auto px-6 py-16">
-        <div className="mb-12">
-          <h1 className="text-3xl font-extralight tracking-tight text-white/90">Projects</h1>
-          <p className="text-sm text-white/35 font-light mt-2">Manage client projects and proposals</p>
+        <div className="mb-12 flex items-end justify-between">
+          <div>
+            <h1 className="text-3xl font-extralight tracking-tight text-white/90">
+              Clients
+            </h1>
+            <p className="text-sm text-white/35 font-light mt-2">
+              People who can sign in to the portal
+            </p>
+          </div>
         </div>
 
-        {typedProjects.length > 0 ? (
-          <ProjectList projects={typedProjects} />
-        ) : (
-          <EmptyState />
-        )}
+        <ClientsView clients={typedClients} />
       </main>
 
       {/* Footer */}

@@ -18,6 +18,19 @@ A client-facing proposal and project management portal for Monday + Partners (M+
 
 ---
 
+## Recent additions (May 18, 2026 — admin surface)
+
+Building out admin client-management and per-project collaborator assignment:
+
+- **Many-to-many project access via `project_collaborators` join table.** Migration 003 (`scripts/migration-003-project-collaborators.sql`) adds the table, backfills existing `projects.client_id` rows as `role = 'primary'`, and extends RLS so any collaborator (not just the primary client) can SELECT the project's rows. `projects.client_id` is preserved as the "primary contact" pointer (drives default email recipient).
+- **Approval is now any-collaborator, not just primary-client.** `/api/projects/[slug]/approve` checks `project_collaborators` membership, not just `client_id`. The client confirmation email goes to whoever actually clicked Approve (falls back to primary client when admin acts on their behalf).
+- **Admin clients page** at `/admin/clients` lists every client with project count and an inline create form. `POST /api/admin/clients` upserts the clients row and pre-confirms the auth.users record so the new client can magic-link straight in.
+- **Admin per-project view** at `/admin/projects/[slug]` shows collaborators with role (primary / collaborator / viewer), an add-by-dropdown form, and per-row remove. API at `/api/admin/projects/[slug]/collaborators` (POST upserts, DELETE by `?client_id=`). The existing admin project list got a `Manage` button on each row that links here.
+- **Approval email templates extracted** into `docs/email-templates/proposal-approved-admin.html` and `proposal-approved-client.html`. Same paper-light family as the auth templates; loaded at runtime in the approve route via `src/lib/email/templates.ts`. These are transactional, sent via Resend — NOT Supabase Auth templates (Supabase has no slot for them). `next.config.ts` includes `outputFileTracingIncludes` so the docs folder ships in the Vercel function bundle.
+- **Generated previews** in `docs/email-templates/previews/` (gitignored) — open these directly in a browser to see the rendered output with sample data.
+
+To run migration 003: paste `scripts/migration-003-project-collaborators.sql` into Supabase SQL Editor.
+
 ## Recent additions (May 15, 2026)
 
 Major bridge build to host the LA.IO proposal under the portal's auth layer:
@@ -87,7 +100,11 @@ A mid-century modern aesthetic brought to contemporary digital execution. Locate
 - `/src/app/(auth)/login/login-form.tsx` — Form with admin-domain detection
 - `/src/app/projects/page.tsx` — Client area listing all of a user's projects
 - `/src/app/admin/page.tsx` — Admin dashboard listing all projects (Drafting Table)
-- `/src/app/api/projects/[slug]/approve/route.ts` — Approval API (Supabase write + Resend email)
+- `/src/app/admin/clients/page.tsx` — Admin clients page (create + list)
+- `/src/app/admin/projects/[slug]/page.tsx` — Admin per-project view (manage collaborators)
+- `/src/app/api/admin/clients/route.ts` — POST create-or-upsert a client + pre-confirmed auth user
+- `/src/app/api/admin/projects/[slug]/collaborators/route.ts` — POST add / DELETE remove a collaborator
+- `/src/app/api/projects/[slug]/approve/route.ts` — Approval API (Supabase write + Resend email; loads templates from `docs/email-templates/`)
 - `/src/app/api/auth/callback/route.ts` — Magic-link exchange (redirects to `/projects` by default)
 - `/src/app/api/stripe/checkout/route.ts` — Stripe checkout session creation
 - `/src/app/api/stripe/webhook/route.ts` — Stripe payment webhook
@@ -112,6 +129,7 @@ A mid-century modern aesthetic brought to contemporary digital execution. Locate
 - `/scripts/schema.sql` — Original schema (clients, projects, milestones, deliverables, notes + RLS)
 - `/scripts/migration-001-add-paid-flags.sql` — Adds `deposit_paid`/`final_paid` booleans
 - `/scripts/migration-002-add-approval-fields.sql` — Adds `approved_at`, `approver_name`, `approval_total`, `year_1_support_included`
+- `/scripts/migration-003-project-collaborators.sql` — Adds `project_collaborators` join table + RLS so multiple users can be on one project
 
 ## How It Works
 
@@ -205,6 +223,7 @@ NEXT_PUBLIC_APP_URL=
 ADMIN_EMAIL=
 RESEND_API_KEY=
 RESEND_FROM_EMAIL=       # optional; defaults to notifications@mondayandpartners.com
+RESEND_FROM_NAME=        # optional; defaults to "Monday + Partners"
 ```
 
 All of these must also be set in Vercel project settings → Environment Variables for production builds.

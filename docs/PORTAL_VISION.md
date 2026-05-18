@@ -128,6 +128,30 @@ Admin views get the M+P brand treatment. Real metrics, real workflows. Multi-cli
 
 ---
 
+## The QA and testing standard we need (and don't have)
+
+Tonight we shipped the LA bridge with "it works for the admin" as the implicit QA bar. That's fine for a transitional bridge. It is not the standard for an agency-grade portal serving $100k+ engagements. Capturing what real QA looks like so the rebuild plans for it from day one rather than bolting it on after launch.
+
+**Email rendering and deliverability.** Every transactional email (magic link, approval notification, deposit reminder, project status digest) needs to be rendered in real inbox clients before it ships. Outlook on Windows. Gmail on web, iOS, and Android. Apple Mail. The new Outlook. Government inboxes specifically (`.gov` and `.edu` filters are aggressive). Litmus or Email on Acid for matrix testing, or at minimum a manual round through three or four real inboxes before sending production traffic. Sender authentication has to pass: SPF, DKIM, DMARC all green on every domain we send from. The magic-link experience is the very first touchpoint a client has with M+P, and it currently arrives from `noreply@mail.app.supabase.io`. That's not the standard.
+
+**Persona-based user-journey walkthroughs.** Before every release, walk the full flow as each persona who'll encounter the system. The new client receiving a proposal cold. The returning client checking on an active project. The stakeholder who isn't the contractual client but is on a viewer list. The admin in the dashboard reviewing pipeline. Each persona on desktop, mobile, and (if relevant) tablet. The script for each walkthrough lives somewhere durable and gets updated as the flow evolves.
+
+**Cross-browser and real-device QA.** Safari, Chrome, Firefox, Edge as a minimum on the desktop side. Real iOS device (not just Safari devtools), real Android device. The portal should feel correct, not "passes the smoke test." Animations don't stutter. Font rendering looks deliberate. Approve buttons hit reliably with thumbs, not just mouse precision.
+
+**Accessibility verification.** WCAG 2.1 AA isn't a marketing claim; it needs to be actually verified. Automated tools (axe, Lighthouse) for the easy catches. Manual keyboard navigation through every flow. Screen reader pass with VoiceOver and NVDA on at least the proposal and the client area. Color contrast measured against tokens, not eyeballed. Reduced-motion users see appropriate fallbacks for the stacked-card scroll. Government clients in particular care about this.
+
+**Performance gates.** Core Web Vitals targets: LCP under 2.5s, INP under 200ms, CLS under 0.1, measured on production with real-user monitoring (Vercel Analytics handles this). A budget for total page weight (the LA proposal at ~60KB HTML + 50KB CSS + 100KB fonts is light; future React-heavy versions should stay under 250KB JS gzipped). Performance regressions block releases.
+
+**Synthetic monitoring in production.** Once the portal is the working operating system for client work, a synthetic check should hit the login flow, the proposal view, and the approval API every few minutes. Alerts go to a real channel that gets watched. We find out about outages before clients do.
+
+**Pre-launch QA checklist.** A real one, with sign-offs, not a sticky note. Lives in the repo. Each release runs through it. Items include all of the above plus things like: are env vars set in Vercel for production, has the migration been run, is the staging environment in a known-good state, has the proposal content been proofed by a second human, has the rollback path been documented.
+
+**Test data and impersonation tooling.** The `generate-magic-link.ts` script we added tonight is the start of this. We need: easy creation of test client accounts, easy cleanup, easy time-travel ("show me what this proposal will look like after approval"), and easy state-of-the-world reset for staging.
+
+The honest version of this list: we have basically none of it today. That's appropriate for a bridge. It is not appropriate for the proper rebuild, and the proper rebuild should plan for QA infrastructure as a first-class part of the build, not as polish at the end.
+
+---
+
 ## Open architecture questions
 
 These should be resolved during Phase 1 planning, not assumed:

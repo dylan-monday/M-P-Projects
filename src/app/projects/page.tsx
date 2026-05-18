@@ -3,12 +3,13 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Logo } from "@/components/layout";
 import { proposalHref } from "@/lib/proposals";
-import type { Project, ProjectStatus } from "@/types";
+import type { Project, ProjectStatus, CollaboratorRole } from "@/types";
 
 // Project with approval fields surfaced; matches the table after migration-002.
 type ProjectWithApproval = Project & {
   approved_at?: string | null;
   approver_name?: string | null;
+  collaborator_role?: CollaboratorRole;
 };
 
 export default async function ProjectsPage() {
@@ -26,14 +27,24 @@ export default async function ProjectsPage() {
     redirect("/admin");
   }
 
-  // RLS keeps this scoped to the user's own client record + projects.
-  const { data: client } = await supabase
-    .from("clients")
-    .select("*, projects(*)")
-    .eq("email", user.email)
-    .maybeSingle();
+  // After migration-003, the source of truth for "what projects can this
+  // user see?" is project_collaborators. RLS scopes the rows to the logged
+  // in user automatically. We pull the join so we can show the user's role
+  // on each project in the UI if we ever want to.
+  const { data: collaborations } = await supabase
+    .from("project_collaborators")
+    .select("role, project:projects(*)")
+    .order("added_at", { ascending: false });
 
-  const projects: ProjectWithApproval[] = client?.projects || [];
+  const projects: ProjectWithApproval[] = [];
+  for (const row of collaborations || []) {
+    const raw = Array.isArray(row.project) ? row.project[0] : row.project;
+    if (!raw) continue;
+    projects.push({
+      ...(raw as Project),
+      collaborator_role: row.role as CollaboratorRole,
+    });
+  }
 
   return (
     <div className="min-h-screen px-6 py-12">

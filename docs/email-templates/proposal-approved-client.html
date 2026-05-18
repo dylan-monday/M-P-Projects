@@ -1,0 +1,136 @@
+<!--
+  M+P proposal-approved client confirmation — paper light.
+
+  HEADS UP: this is NOT a Supabase Auth template. Supabase only sends auth
+  emails (Magic Link, Confirm Signup, Invite, Reset Password, Change Email,
+  Reauthentication). Proposal approval is a domain event, so this email is
+  sent from the application via the Resend SDK in:
+
+      src/app/api/projects/[slug]/approve/route.ts
+
+  Keeping the HTML in this folder (alongside the Supabase auth templates) so
+  every email the user sees lives in one family and one place. Edit here,
+  preview in a browser, the approve route picks it up at runtime.
+
+  Substitution tokens (replaced server-side in the approve route):
+    {{ approver_name }}        Name typed into the approval modal
+    {{ approver_first_comma }} ", {first name}" or "" if no name available
+    {{ project_title }}        e.g. "Louisiana Startup Report 2026"
+    {{ total_label }}          Formatted dollars, e.g. "$104,800"
+    {{ support_label }}        "Included" or "Declined"
+    {{ approved_at_label }}    e.g. "May 18, 2026 at 3:42 PM"
+    {{ app_url }}              Base URL of the portal
+
+  Subject (set in approve route, not here):
+    Approval confirmed — {{ project_title }}
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Approval confirmed</title>
+</head>
+<body style="margin:0; padding:0; background:#FAFAF7; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; color:#111111; -webkit-font-smoothing:antialiased;">
+  <div style="display:none; max-height:0; overflow:hidden; visibility:hidden; mso-hide:all;">Your approval of {{ project_title }} ({{ total_label }}) is recorded.</div>
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#FAFAF7;">
+    <tr>
+      <td align="center" style="padding:40px 20px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:560px; margin:0 auto; background:#FAFAF7;">
+
+          <!-- Chartreuse rule -->
+          <tr>
+            <td style="height:4px; background:#C9D92E; line-height:1px; font-size:1px;">&nbsp;</td>
+          </tr>
+
+          <!-- Logo -->
+          <tr>
+            <td style="padding:32px 0 28px;">
+              <img src="{{ app_url }}/favicon.png" alt="Monday + Partners" width="56" height="56" style="display:block; border:0; outline:none; text-decoration:none;">
+            </td>
+          </tr>
+
+          <!-- Eyebrow + headline -->
+          <tr>
+            <td style="padding:0 0 24px;">
+              <p style="margin:0 0 12px; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; color:#555555;">Monday + Partners · Approval Confirmed</p>
+              <h1 style="margin:0; font-size:26px; font-weight:500; line-height:1.25; color:#111111;">Thank you. Your approval is in.</h1>
+            </td>
+          </tr>
+
+          <!-- Lede -->
+          <tr>
+            <td style="padding:0 0 24px; font-size:16px; line-height:1.6; color:#333333;">
+              <p style="margin:0;">Thanks{{ approver_first_comma }}. Your approval of <strong>{{ project_title }}</strong> is confirmed and recorded.</p>
+            </td>
+          </tr>
+
+          <!-- Detail table -->
+          <tr>
+            <td style="padding:0 0 28px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="font-size:14px; line-height:1.7;">
+                <tr>
+                  <td style="padding:6px 24px 6px 0; color:#666666; vertical-align:top; white-space:nowrap;">Total approved</td>
+                  <td style="padding:6px 0; color:#111111; font-weight:600;">{{ total_label }}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 24px 6px 0; color:#666666; vertical-align:top; white-space:nowrap;">Year 1 Support</td>
+                  <td style="padding:6px 0; color:#111111;">{{ support_label }}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 24px 6px 0; color:#666666; vertical-align:top; white-space:nowrap;">Approved by</td>
+                  <td style="padding:6px 0; color:#111111;">{{ approver_name }}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 24px 6px 0; color:#666666; vertical-align:top; white-space:nowrap;">Recorded at</td>
+                  <td style="padding:6px 0; color:#111111;">{{ approved_at_label }} CT</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Reassurance copy -->
+          <tr>
+            <td style="padding:0 0 16px; font-size:16px; line-height:1.6; color:#333333;">
+              <p style="margin:0 0 16px;">Here's what happens next. We'll prepare the task order and follow up within one to two business days. The proposal stays available at your portal for reference.</p>
+              <p style="margin:0 0 24px;">If anything looks off, or if you'd like to talk through scheduling, reply to this email or reach Dylan directly.</p>
+            </td>
+          </tr>
+
+          <!-- CTA -->
+          <tr>
+            <td style="padding:0 0 32px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="background:#111111;">
+                    <a href="{{ app_url }}/projects" style="display:inline-block; padding:14px 26px; color:#FAFAF7; text-decoration:none; font-size:12px; letter-spacing:0.18em; text-transform:uppercase; font-weight:500;">Open the portal</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Signature -->
+          <tr>
+            <td style="padding:0 0 28px; font-size:13px; line-height:1.6; color:#666666;">
+              <p style="margin:0;">
+                <strong style="color:#111111;">Dylan DiBona</strong>&nbsp;·&nbsp;Chief Creative Partner<br>
+                <a href="mailto:dylan@mondayandpartners.com" style="color:#9BAB10; text-decoration:underline;">dylan@mondayandpartners.com</a>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Divider + tagline footer -->
+          <tr>
+            <td style="border-top:1px solid #E5E2D8; padding-top:24px;">
+              <p style="margin:0 0 4px; font-size:10px; letter-spacing:0.25em; text-transform:uppercase; color:#555555;">Clarity · Conjuring · Currency</p>
+              <p style="margin:6px 0 0; font-size:11px; color:#888888;">Monday + Partners · New Orleans</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

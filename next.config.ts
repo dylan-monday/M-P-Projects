@@ -8,6 +8,15 @@ const nextConfig: NextConfig = {
     root: path.join(__dirname),
   },
 
+  // The approve route (and any future admin email routes) load HTML
+  // templates from docs/email-templates/ at runtime. Without this, Next's
+  // file tracer wouldn't bundle the /docs folder into the serverless
+  // function and fs.readFileSync would 404 in production.
+  outputFileTracingIncludes: {
+    "/api/projects/[slug]/approve": ["./docs/email-templates/**/*.html"],
+    "/api/admin/**": ["./docs/email-templates/**/*.html"],
+  },
+
   // TEMPORARY: bypass TS and ESLint failures during `next build`.
   // Reason: the Drafting Table components (src/components/drafting-table/)
   // have pre-existing Framer Motion + React 19 type incompatibilities that
