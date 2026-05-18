@@ -152,7 +152,19 @@ WHERE slug = 'la-startup-2026';
 
 Sent to Talia on May 15: a tight reply addressing her 7 questions plus 5 outstanding items (generative tool scope, change-order language, Cotton-hosted services confirmation, payment schedule typo, MVP as starting reference, signed-by-May-22 timing, kill fees framed as paperwork hygiene).
 
-Talia accepted the mandatories in her v2 proposal. Open items pending her response.
+Talia accepted the mandatories in her v2 proposal.
+
+Cotton came back on May 18 with v3 (`260518_Louisiana Startup Report x Cotton.pdf` in Team Drives). They addressed the 5 outstanding items: payment schedule typo fixed ("one quarter (25%)"); post-launch support language explicitly carves out routine tuning/refinement from change-order territory; generative tool hosting confirmed (M+P or Cotton can host, subdomain recommended if M+P hosts); no Cotton-hosted services persist post-launch; Beatrice claimed cancellation language is in the proposal. Total $74,000 unchanged.
+
+**Review of v3 vs M+P terms:** No updates needed to the M+P interactive proposal to LA.IO. Numbers, kill fees (50/75/100 at 10 BD / 11-45 / 45+), payment schedule (50/25/25 at task order / Phase 02 / launch), and change-order carve-outs all hold up. The math protects M+P at every cancellation tier because Cotton's "billed as work completes" cost curve rises slower than M+P's graduated tiers (Day 5 net +$28k, Day 30 net +$35-37k, Day 60+ net +$40-44k).
+
+**Two soft items to lock down via email with Beatrice** before signing:
+
+1. **Cancellation language isn't actually in v3** despite Beatrice's claim. The payment schedule describes cadence, not termination. Practically the math protects M+P, but explicit Cotton kill fee tiers (or "capped at completed phases + retained 25% upfront") in writing would be cleaner. Worth one short email asking her to spell out the termination position so it's contract-grade.
+
+2. **Admin dashboard is still "may be implemented"** in v3 (and per-IP token caps + session limits are still "may include"). Beatrice's note that they want a screen recording of our prototype implies they'll commit after seeing it. Send the screen recording, then in the same email get her to confirm the dashboard (and the abuse-prevention caps) are committed deliverables, not optional.
+
+If both come back yes via email, the engagement is fully buttoned up and ready to contract.
 
 ---
 
@@ -166,7 +178,7 @@ Talia accepted the mandatories in her v2 proposal. Open items pending her respon
    - Tell her to expect an email from `notifications@mondayandpartners.com` (check spam if needed)
    - Watch the admin inbox for the approval notification when she signs off
 
-3. **Cotton follow-up.** Watch for Talia's response on the 5 outstanding items, especially the kill fee structure.
+3. **Cotton follow-up.** v3 received and reviewed. Send Beatrice the admin dashboard screen recording. In that email, get written confirmation of (a) the admin dashboard as a committed deliverable based on the recording, and (b) explicit cancellation language (Cotton's claim in a termination scenario capped at completed phases + retained 25% upfront, or mirrored to our 50/75/100 client-side tiers). Once both confirmed, ready to contract.
 
 4. **Strategic conversation about the portal rebuild.** Refer to `docs/PORTAL_VISION.md`. The phased plan starts with Figma planning, not more code. Don't start writing components for the rebuild until that planning step happens.
 

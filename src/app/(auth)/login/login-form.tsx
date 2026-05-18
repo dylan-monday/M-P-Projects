@@ -9,16 +9,31 @@ import { Button, Input } from "@/components/ui";
 // Magic link is used for every other email.
 const ADMIN_DOMAIN = "@mondayandpartners.com";
 
+// Human-readable copy for the few error tokens we redirect with from the
+// auth callback routes. Anything else falls through to the raw token so it's
+// still surfaced rather than swallowed.
+const AUTH_ERROR_MESSAGES: Record<string, string> = {
+  auth_failed:
+    "That link couldn't be used. It may have expired or already been opened. Request a new one below.",
+};
+
 export function LoginForm() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/projects";
+
+  const incomingErrorToken = searchParams.get("error");
+  const incomingError = incomingErrorToken
+    ? AUTH_ERROR_MESSAGES[incomingErrorToken] || incomingErrorToken
+    : null;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<
     { type: "success" | "error"; text: string } | null
-  >(null);
+  >(
+    incomingError ? { type: "error", text: incomingError } : null
+  );
 
   const isAdminEmail = email.toLowerCase().endsWith(ADMIN_DOMAIN);
 
@@ -47,10 +62,18 @@ export function LoginForm() {
         window.location.href = redirectTo;
       }
     } else {
+      // IMPORTANT: route the magic link through the CLIENT-side /auth/callback
+      // page, not the server-side /api/auth/callback. Email security scanners
+      // (Gmail, M365 Defender, etc.) pre-fetch links to scan them. The server
+      // route would attempt the PKCE exchange on that scanner hit — without
+      // a code_verifier cookie it fails, and Supabase may treat the token as
+      // consumed, breaking the real click. The client page only runs the
+      // exchange when JS executes in the user's actual browser, so scanners
+      // can't burn the token before the user gets there.
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/api/auth/callback?redirect=${encodeURIComponent(redirectTo)}`,
+          emailRedirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirectTo)}`,
         },
       });
 
